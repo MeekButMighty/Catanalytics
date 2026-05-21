@@ -77,8 +77,60 @@ def plot_grouped_bar(master_df):
     )
     
     return fig
-        
-def plot_one_game(turns_df, master_df):
+
+
+def plot_one_game(turns_df, master_df, timestamp):
+
+    # filter to selected game timestamp
+    d = turns_df[turns_df["timestamp"] == timestamp]
+
+    # get matching game_id
+    gid = d["game_id"].iloc[0]
+
+    # get players for this game
+    players = (
+        master_df[master_df['game_id'] == gid]['player']
+        .unique()
+    )
+
+    fig = go.Figure()
+
+    for placement, player in zip(
+        ['p1_vps', 'p2_vps', 'p3_vps', 'p4_vps'],
+        players
+    ):
+
+        fig.add_trace(go.Scatter(
+            x=d['turn'],
+            y=d[placement],
+            mode="lines",
+            name=player,
+            line=dict(
+                color=color_dict[
+                    np.where(players == player)[0][0] + 1
+                ]
+            )
+        ))
+
+    fig.update_layout(
+        legend=dict(
+            x=0.04,
+            y=0.92,
+            xanchor="left",
+            yanchor="top"
+        ),
+        xaxis_title="Turn",
+        margin=dict(
+            t=10,   # reduce top margin
+            l=20,
+            r=20,
+            b=20
+        )
+    )
+
+    return fig
+
+def plots_one_game(turns_df, master_df):
 
     game_ids = turns_df["game_id"].unique()[::-1]
     fig = go.Figure()

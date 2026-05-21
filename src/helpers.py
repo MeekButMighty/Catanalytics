@@ -149,3 +149,21 @@ def kpi(master_df, turns_df):
     total_players = len(master_df['player'].unique())
     return num_games, num_turns, total_players, win_rate, avg_vps
 
+def time_dict(turns_df):
+    timestamps = (
+        turns_df["timestamp"]
+        .drop_duplicates()
+        .sort_values(ascending=False)
+    )
+
+    # create mapping:
+    # pretty label -> raw timestamp
+    timestamp_options = {
+        pd.to_datetime(
+            ts,
+            format="%Y-%m-%d_%H-%M-%S"
+        ).strftime("%B %d, %Y at %I:%M %p"): ts
+        for ts in timestamps
+    }
+    return timestamp_options
+
