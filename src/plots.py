@@ -61,6 +61,27 @@ def plot_grouped_bar(master_df):
     
     return fig
 
+def plot_length_hist(turns_df):
+    final_turns = turns_df[turns_df['game_percentage']==1.0].copy()
+    lengths = final_turns['turn']
+    fig = go.Figure()
+
+    fig.add_trace(
+        go.Histogram(
+            x=lengths,
+            nbinsx=12,
+            marker_color="#38761d"
+        )
+    )
+    fig.update_layout(
+        height=332,
+        margin=dict(t=20, b=40),
+        xaxis=dict(
+             title="Turns"
+        )
+    )
+
+    return fig
 
 def plot_one_game(turns_df, master_df, timestamp):
 
@@ -117,6 +138,84 @@ def plot_one_game(turns_df, master_df, timestamp):
     return fig
 
 def plot_stacked_bar(master_df):
+
+    summary = (
+        master_df
+        .groupby(["placement_order", "rank"])
+        .size()
+        .reset_index(name="count")
+    )
+
+    summary["value"] = (
+        summary["count"]
+        / summary.groupby("placement_order")["count"].transform("sum")
+    )
+
+    plot_df = (
+        summary
+        .pivot(
+            index="placement_order",
+            columns="rank",
+            values="value"
+        )
+        .fillna(0)
+        .sort_index()
+    )
+
+    fig = go.Figure()
+
+    # add one horizontal stacked bar trace per rank
+    for rank in plot_df.columns:
+        fig.add_trace(
+            go.Bar(
+                y=plot_df.index,
+                x=plot_df[rank],
+                name=f"Rank {rank}",
+                orientation="h",
+                marker_color=color_dict[rank],
+                hovertemplate=(
+                    f"Rank: {rank}<br>"
+                    "Placement Order: %{y}<br>"
+                    "Proportion: %{x:.1%}<extra></extra>"
+                )
+            )
+        )
+
+    fig.update_layout(
+        barmode="stack",
+        height=350,
+        width=800,
+        showlegend=False,
+
+        # reverse y-axis like invert_yaxis()
+        yaxis=dict(
+            autorange="reversed",
+            tickmode="array",
+            tickvals=[4, 3, 2, 1],
+            ticktext=[
+                "4th, 5th",
+                "3rd, 6th",
+                "2nd, 7th",
+                "1st, 8th"
+            ],
+            tickfont=dict(size=19),
+            title="",
+            automargin=False
+        ),
+
+        xaxis=dict(
+            range=[0, 1],
+            tickmode="array",
+            tickvals=[0, 0.25, 0.5, 0.75, 1.0],
+            ticktext=["0%", "25%", "50%", "75%", "100%"],
+            title="Proportion of games"
+        ),
+        margin=dict(l=80, r=40, t=20, b=40),
+    )
+
+    return fig
+
+def plots_stacked_bar(master_df):
     summary = (
         master_df
         .groupby(["placement_order", "rank"])

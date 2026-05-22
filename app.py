@@ -10,7 +10,8 @@ from src.plots import (
     plot_avg_prog,
     plot_one_game,
     plot_firsts,
-    plot_grouped_bar
+    plot_grouped_bar,
+    plot_length_hist
 )
 from src.helpers import render_hex, kpi, time_dict
 
@@ -97,6 +98,7 @@ with col2:
 # KPI ROW (cached)
 # -------------------------
 values = get_kpis(master, turns)
+num_games = values[0]
 
 k1, k2, k3, k4, k5 = st.columns(5)
 
@@ -178,6 +180,35 @@ st.plotly_chart(
     use_container_width=True
 )
 
-st.pyplot(plot_stacked_bar(master))
+col1, col2 = st.columns([3, 2], gap="small")
+
+with col1:
+    st.markdown("""
+        <div style='font-size:28px; font-weight:600;
+        font-family: Bahnschrift, Segoe UI;'>
+        Is the snake draft really fair?
+        </div>
+    """, unsafe_allow_html=True)
+    st.markdown(f"""
+        <div style='font-size:20px; font-weight:600;
+        font-family: Bahnschrift, Segoe UI;'>
+        How players in different placement orders fared across <b>{num_games}</b> games
+        </div>
+    """, unsafe_allow_html=True)  
+    st.plotly_chart(plot_stacked_bar(master), use_container_width=True)
+with col2:
+    st.markdown("""
+        <div style='font-size:28px; font-weight:600;
+        font-family: Bahnschrift, Segoe UI;'>
+        How long do games last?
+        </div>
+    """, unsafe_allow_html=True)
+    st.markdown("""
+        <div style='font-size:20px; font-weight:600;
+        font-family: Bahnschrift, Segoe UI;'>
+        Distribution of game length in turns
+        </div>
+    """, unsafe_allow_html=True)
+    st.plotly_chart(plot_length_hist(turns))
 st.pyplot(plot_firsts(turns, 2))
 st.pyplot(plot_avg_prog(progress))
