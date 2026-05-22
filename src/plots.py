@@ -25,6 +25,13 @@ def plot_grouped_bar(master_df):
             value_name='average'
         )
     )
+    vp_breakdown['vp_type'] = vp_breakdown['vp_type'].map({
+        'vp_settle': 'Settlements',
+        'vp_city': 'Cities',
+        'vp_dc': 'Dev Cards',
+        'longest_road': 'Longest Road',
+        'largest_army': 'Largest Army'
+    })
     fig = px.bar(
         vp_breakdown,
         x='vp_type',
@@ -33,47 +40,23 @@ def plot_grouped_bar(master_df):
         barmode='group',
         color_discrete_map={str(k): v for k, v in color_dict.items()},
     )
+
+    fig.update_yaxes(tickvals=[0, 1, 2, 3, 4])
+
     fig.update_layout(
-        margin=dict(t=110),
         yaxis_title="",
         xaxis_title="",
-        xaxis=dict(
-            tickvals = [0,1,2,3,4,5],
-            ticktext = ["Settlements", "Cities", "Dev Cards", "Longest Road", "Largest Army"]
+        yaxis=dict(
+            automargin=False
         ),
-        title=dict(
-            text=(
-                '<b><span style="color:#d4af37">'
-                'Winners</span> city up and take longest road</b>'
-            ),
-            x=0.095,
-            y=0.91,
-            xanchor="left",
-            yanchor="top",
-            font=dict(
-                size=36,
-                family="Bahnschrift, Segoe UI"
-            ),
-        ),
-        legend=dict(
-                orientation="h",
-                x=0.6,
-                y=0.92,
-                xanchor="left",
-                yanchor="top"
-            ),
-        annotations=[
-            dict(
-                text="Average victory points earned from different sources",
-                x=0,
-                y=1.13,  # tweak this to control spacing
-                xref="paper",
-                yref="paper",
-                showarrow=False,
-                xanchor="left",
-                font=dict(size=24, family="Bahnschrift, Segoe UI")
-            )
-        ],
+        height=350,
+        showlegend=False,
+        margin=dict(
+            t=10,   # reduce top margin
+            l=20,
+            r=20,
+            b=20
+        )
     )
     
     return fig
@@ -120,106 +103,15 @@ def plot_one_game(turns_df, master_df, timestamp):
             yanchor="top"
         ),
         xaxis_title="Turn",
+        yaxis=dict(
+            automargin=False
+        ),
         margin=dict(
             t=10,   # reduce top margin
             l=20,
             r=20,
             b=20
         )
-    )
-
-    return fig
-
-def plots_one_game(turns_df, master_df):
-
-    game_ids = turns_df["game_id"].unique()[::-1]
-    fig = go.Figure()
-
-    # store trace groups per game
-    traces_per_game = []
-
-    for gid in game_ids:
-        d = turns_df[turns_df["game_id"] == gid]
-        players = master_df[master_df['game_id'] == gid]['player'].unique()
-
-        game_trace_indices = []
-
-        for placement, player, in zip(
-            ['p1_vps', 'p2_vps', 'p3_vps', 'p4_vps'],
-            players
-        ):
-            fig.add_trace(go.Scatter(
-                x=d['turn'],
-                y=d[placement],
-                mode="lines",
-                name=player,
-                line=dict(color=color_dict[np.where(players == player)[0][0] + 1]),
-                visible=False  # start hidden
-            ))
-            game_trace_indices.append(len(fig.data) - 1)
-
-        traces_per_game.append(game_trace_indices)
-
-    # make first game visible
-    for idx in traces_per_game[0]:
-        fig.data[idx].visible = True
-
-    # map game_id -> timestamp
-    game_timestamps = (
-        turns_df
-        .groupby("game_id")["timestamp"]
-        .first()
-        .to_dict()
-    )
-
-    # dropdown
-    buttons = []
-
-    for i, gid in enumerate(game_ids):
-
-        visibility = [False] * len(fig.data)
-
-        for idx in traces_per_game[i]:
-            visibility[idx] = True
-
-        raw_timestamp = game_timestamps.get(gid, gid)
-        pretty_timestamp = (
-            pd.to_datetime(raw_timestamp, format="%Y-%m-%d_%H-%M-%S")
-            .strftime("%B %d, %Y at %I:%M %p")
-        )
-
-        buttons.append(dict(
-            label=str(pretty_timestamp),
-            method="update",
-            args=[
-                {"visible": visibility},
-            ]
-        ))
-    fig.update_layout(
-        updatemenus=[
-            dict(
-                buttons=buttons,
-                direction="down",
-                showactive=True,
-                x=0.55,
-                y=1.15,
-                xanchor="left",
-                yanchor="top"
-            )
-        ],
-        legend=dict(
-            x=0.04,
-            y=0.92,
-            xanchor="left",
-            yanchor="top"
-        ),
-        title=dict(
-            text="<b>VP progression for game played on:<b>",
-            x=0.02,
-            y=0.845,
-            font=dict(size=24)
-        ),
-        xaxis_title="Turn"
     )
 
     return fig

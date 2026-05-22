@@ -156,6 +156,23 @@ st.plotly_chart(
     use_container_width=True
 )
 
+st.markdown("""
+    <div style='font-size:28px; font-weight:600;
+    font-family: Bahnschrift, Segoe UI;'>
+    <span style='color:#d4af37;'>Winners</span>
+    city up and take longest road
+    </div>
+""", unsafe_allow_html=True)
+st.markdown("""
+    <div style='font-size:20px; font-weight:600;
+    font-family: Bahnschrift, Segoe UI;'>
+    Average VPs gain from different sources in comparison to
+    <span style='color:#B0B7C0;'>runner up,</span>
+    <span style='color:#B87333;'>player in third,</span>  
+    and
+    <span style='color:#3c78d8;'>player in fourth,</span>     
+    </div>
+""", unsafe_allow_html=True)
 st.plotly_chart(
     plot_grouped_bar(master),
     use_container_width=True
