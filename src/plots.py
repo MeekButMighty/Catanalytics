@@ -281,11 +281,11 @@ def plot_firsts(firsts_df):
         fig.add_annotation(
             text=title,
             x=-0.032,
-            y=1.15,
+            y=1.2,
             xref="paper",
             yref=f"y{row} domain" if row > 1 else "y domain",
             showarrow=False,
-            font=dict(size=18, family="Bahnschrift, Segoe UI, Arial")
+            font=dict(size=16, family="Bahnschrift, Segoe UI, Arial")
         )
 
     #plot data
@@ -301,7 +301,7 @@ def plot_firsts(firsts_df):
     add_kde_trace(fig, dc_long, 3, "First Dev Card Drawn")
 
     fig.update_layout(
-        height=600,
+        height=500,
         margin=dict(t=40, l=0, r=20, b=40),
 
         legend=dict(
@@ -381,7 +381,7 @@ def pi_series(firsts_df):
         )
 
     fig.update_layout(
-        height=600,
+        height=500,
         margin=dict(t=40, l=0, r=20, b=50),
         showlegend=False,
         font=dict(
@@ -391,7 +391,7 @@ def pi_series(firsts_df):
 
     # style subplot titles
     fig.update_annotations(
-        font_size=18,
+        font_size=16,
         xanchor="left",
         x=0
     )
