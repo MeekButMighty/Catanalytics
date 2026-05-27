@@ -7,13 +7,13 @@ from src.transforms import (
 )
 from src.plots import (
     plot_stacked_bar,
-    plot_avg_prog,
     plot_one_game,
     plot_firsts,
     plot_grouped_bar,
-    plot_length_hist
+    plot_length_hist,
+    pi_series
 )
-from src.helpers import render_hex, kpi, time_dict
+from src.helpers import render_hex, kpi, time_dict, make_firsts_df
 
 import streamlit as st
 
@@ -155,7 +155,7 @@ selected_timestamp = timestamp_options[selected_label]
 # -------------------------
 st.plotly_chart(
     plot_one_game(turns, master, selected_timestamp),
-    use_container_width=True
+    width='stretch'
 )
 
 st.markdown("""
@@ -177,7 +177,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 st.plotly_chart(
     plot_grouped_bar(master),
-    use_container_width=True
+    width='stretch'
 )
 
 col1, col2 = st.columns([3, 2], gap="small")
@@ -195,7 +195,7 @@ with col1:
         How players in different placement orders fared across <b>{num_games}</b> games
         </div>
     """, unsafe_allow_html=True)  
-    st.plotly_chart(plot_stacked_bar(master), use_container_width=True)
+    st.plotly_chart(plot_stacked_bar(master), width='stretch')
 with col2:
     st.markdown("""
         <div style='font-size:28px; font-weight:600;
@@ -210,5 +210,26 @@ with col2:
         </div>
     """, unsafe_allow_html=True)
     st.plotly_chart(plot_length_hist(turns))
-st.pyplot(plot_firsts(turns, 2))
-st.pyplot(plot_avg_prog(progress))
+
+col1, col2 = st.columns([3, 1], gap="small", vertical_alignment="bottom")
+
+firsts_df = make_firsts_df(turns)
+with col1:
+    st.markdown("""
+        <div style='font-size:28px; font-weight:600;
+        font-family: Bahnschrift, Segoe UI;'>
+        How early in the game are key milestones achieved?
+        </div>
+    """, unsafe_allow_html=True)
+    st.markdown("""
+        <div style='font-size:20px; font-weight:600;
+        font-family: Bahnschrift, Segoe UI;'>
+        Kernel density estimates of key actions for each player by rank
+        </div>
+    """, unsafe_allow_html=True)
+    st.plotly_chart(plot_firsts(firsts_df), width='stretch', config={"displayModeBar": False})
+
+with col2:
+    st.plotly_chart(pi_series(firsts_df), width='stretch', config={"displayModeBar": False})
+
+#st.pyplot(plot_avg_prog(progress))

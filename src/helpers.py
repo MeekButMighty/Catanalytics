@@ -167,3 +167,30 @@ def time_dict(turns_df):
     }
     return timestamp_options
 
+def make_firsts_df(turns_df):
+    columns = [
+        "game_id",
+        "p1_first_settle", "p1_first_city", "p1_first_dc",
+        "p2_first_settle", "p2_first_city", "p2_first_dc",
+        "p3_first_settle", "p3_first_city", "p3_first_dc",
+        "p4_first_settle", "p4_first_city", "p4_first_dc"
+    ]
+    rows = []
+    time_unit = "game_percentage"
+
+    for game in turns_df["game_id"].unique():
+        game_builds = turns_df[turns_df["game_id"] == game]
+        new_row = {"game_id": game}
+
+        for i in range(1, 5):
+            settle_col = f"p{i}_settles"
+            city_col = f"p{i}_cities"
+            dc_col = f"p{i}_dcs"
+
+            new_row[f"p{i}_first_settle"] = game_builds[game_builds[settle_col] > 2][time_unit].min()
+            new_row[f"p{i}_first_city"] = game_builds[game_builds[city_col] > 0][time_unit].min()
+            new_row[f"p{i}_first_dc"] = game_builds[game_builds[dc_col] > 0][time_unit].min()
+
+        rows.append(new_row)
+
+    return pd.DataFrame(rows, columns=columns)
