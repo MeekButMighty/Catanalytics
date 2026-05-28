@@ -167,6 +167,17 @@ def time_dict(turns_df):
     }
     return timestamp_options
 
+def p2_lead_pct(turns_df):
+    vp_cols = ['p1_vps', 'p2_vps', 'p3_vps', 'p4_vps']
+    p2_lead_dict = {}
+    for game_id in turns_df['game_id'].unique():
+        game_turns = turns_df[turns_df['game_id'] == game_id]
+        num_turns = len(game_turns)
+        p2_lead_turns = game_turns['p2_vps'] == game_turns[vp_cols].max(axis=1)
+        p2_lead_pct = p2_lead_turns.sum() / num_turns
+        p2_lead_dict[game_id] = p2_lead_pct
+    return p2_lead_dict
+
 def make_firsts_df(turns_df):
     columns = [
         "game_id",

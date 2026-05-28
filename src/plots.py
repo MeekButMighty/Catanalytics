@@ -6,6 +6,7 @@ import plotly.express as px
 import pandas as pd
 from plotly.subplots import make_subplots
 from scipy.stats import gaussian_kde
+from src.helpers import p2_lead_pct
 
 color_dict = {
     1: '#D4AF37',  # Gold
@@ -296,7 +297,7 @@ def plot_firsts(firsts_df):
         vertical_spacing=0.08
     )
 
-    add_kde_trace(fig, settle_long, 1, "First Settlement Built")
+    add_kde_trace(fig, settle_long, 1, "First Settlement Built (not including starting settlements)")
     add_kde_trace(fig, city_long, 2, "First City Built")
     add_kde_trace(fig, dc_long, 3, "First Dev Card Drawn")
 
@@ -398,4 +399,35 @@ def pi_series(firsts_df):
     for ann in fig['layout']['annotations']:
         ann['y'] += 0.01
 
+    return fig
+
+def plot_robbed(master_df, turns_df):
+    p2_lead_dict = p2_lead_pct(turns_df)
+    robbed_df = master_df.pivot(
+        index="game_id",
+        columns="rank",
+        values="stolen_from"
+    )
+    robbed_df['diff_1_2'] = robbed_df[1] - robbed_df[2]
+    robbed_df['p2_lead_pct'] = robbed_df.index.map(p2_lead_dict)
+    pct_neg = (robbed_df['diff_1_2'] < 0).mean()
+    pct_pos = (robbed_df['diff_1_2'] > 0).mean()
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=robbed_df['diff_1_2'],
+        y=np.random.normal(0, 0.05, len(robbed_df)),  # jitter around 0,
+        mode='markers',
+        marker=dict(color=robbed_df['p2_lead_pct'], colorscale='Viridis', showscale=True),
+    ))
+    fig.update_layout(
+        xaxis_title="Difference in Times Robbed (1st Place - 2nd Place)",
+        yaxis_title="",
+        yaxis=dict(showticklabels=False, range=[-0.4, 0.4]),
+    )
+    fig.add_annotation(
+        x=0, y=0.3,
+        text=f"Percentage of games where 1st place was robbed more: {pct_pos:.1%}<br>Percentage of games where 2nd place was robbed more: {pct_neg:.1%}",
+        showarrow=False,
+        font=dict(size=12)
+    )
     return fig

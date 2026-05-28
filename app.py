@@ -11,7 +11,8 @@ from src.plots import (
     plot_firsts,
     plot_grouped_bar,
     plot_length_hist,
-    pi_series
+    pi_series,
+    plot_robbed
 )
 from src.helpers import render_hex, kpi, time_dict, make_firsts_df
 
@@ -232,4 +233,5 @@ with col1:
 with col2:
     st.plotly_chart(pi_series(firsts_df), width='stretch', config={"displayModeBar": False})
 
+st.plotly_chart(plot_robbed(master, turns), width='stretch')
 #st.pyplot(plot_avg_prog(progress))
