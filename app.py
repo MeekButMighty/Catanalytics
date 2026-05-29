@@ -45,6 +45,15 @@ html, body, [data-testid="stApp"] {
 h1, h2, h3, h4, h5, h6 {
     font-family: 'Bahnschrift', 'Segoe UI', sans-serif !important;
 }
+
+div[data-testid="stPlotlyChart"] {
+    display: flex !important;
+    justify-content: flex-start !important;
+}
+
+div[data-testid="stPlotlyChart"] > div {
+    width: 100% !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -233,5 +242,18 @@ with col1:
 with col2:
     st.plotly_chart(pi_series(firsts_df), width='stretch', config={"displayModeBar": False})
 
-st.plotly_chart(plot_robbed(master, turns), width='stretch')
+
+st.markdown("""
+        <div style='font-size:28px; font-weight:600;
+        font-family: Bahnschrift, Segoe UI;'>
+        Target on your back: can taking the lead too early set you up for failure?
+        </div>
+    """, unsafe_allow_html=True)
+st.markdown("""
+        <div style='font-size:20px; font-weight:600;
+        font-family: Bahnschrift, Segoe UI;'>
+        Distribution of robber disparities between winning player and runner-up
+        </div>
+    """, unsafe_allow_html=True)
+st.plotly_chart(plot_robbed(master, turns),  width='stretch', config={"displayModeBar": False})
 #st.pyplot(plot_avg_prog(progress))

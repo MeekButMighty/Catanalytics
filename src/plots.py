@@ -12,7 +12,8 @@ color_dict = {
     1: '#D4AF37',  # Gold
     2: '#B0B7C0',  # Silver
     3: '#B87333',  # Bronze
-    4: '#3c78d8'   # Rose
+    4: '#3c78d8',   # Rose
+    5: '#38761d'   # Green (for 5+ player games)
 }
 
 def plot_grouped_bar(master_df):
@@ -73,7 +74,7 @@ def plot_length_hist(turns_df):
         go.Histogram(
             x=lengths,
             nbinsx=12,
-            marker_color="#38761d"
+            marker_color=color_dict[5]
         )
     )
     fig.update_layout(
@@ -417,17 +418,96 @@ def plot_robbed(master_df, turns_df):
         x=robbed_df['diff_1_2'],
         y=np.random.normal(0, 0.05, len(robbed_df)),  # jitter around 0,
         mode='markers',
-        marker=dict(color=robbed_df['p2_lead_pct'], colorscale='Viridis', showscale=True),
+        marker=dict(color=robbed_df['p2_lead_pct'], colorscale=[
+            [0.0, "#cbd5e1"],
+            [1.0, "#0061FE"]
+            ], 
+            colorbar=dict(
+                title=dict(text="Percent of Game<br>Runner-up Led",
+                font=dict(size=14, family="Bahnschrift, Segoe UI, Arial")),
+                tickformat=".0%", 
+                thickness=35,
+                len=1.1
+                ),
+            showscale=True),
+            hovertemplate=("Difference in times robbed: %{x}<br>"
+                           "Runner-up led %{marker.color:.1%} of the game<extra></extra>")
     ))
     fig.update_layout(
         xaxis_title="Difference in Times Robbed (1st Place - 2nd Place)",
-        yaxis_title="",
-        yaxis=dict(showticklabels=False, range=[-0.4, 0.4]),
+        yaxis=dict(
+            visible=False,
+            range=[-0.3, 0.3],
+            showgrid=False,
+            fixedrange=True,
+            zeroline=False,
+            automargin=False
+        ),
+        xaxis=dict(range=[-12,12], tickmode="array", \
+                   tickvals=[-10, -5, 0, 5, 10], ticktext=['-10', '-5', '0', '5', '10'],
+                   showgrid=False,
+                   zeroline=True, zerolinewidth=1, zerolinecolor='lightgray', 
+                   fixedrange=True),  
+        height=350,
+        margin=dict(t=20, l=0, r=20, b=50)
+    )
+    #annotations for left side
+    fig.add_annotation(
+        x=-11, y=-0.2,
+        text=f"{pct_neg:.1%} of games",
+        showarrow=False,
+        font=dict(size=24, color="grey", family="Bahnschrift, Segoe UI, Arial"),
+        xref="x",
+        yref="y",
+        xanchor="left",
+        yanchor="middle"
     )
     fig.add_annotation(
-        x=0, y=0.3,
-        text=f"Percentage of games where 1st place was robbed more: {pct_pos:.1%}<br>Percentage of games where 2nd place was robbed more: {pct_neg:.1%}",
+        x=-11, y=0.2,
+        text="Runner-up robbed more",
         showarrow=False,
-        font=dict(size=12)
+        font=dict(size=24, color="grey", family="Bahnschrift, Segoe UI, Arial"),
+        xref="x",
+        yref="y",
+        xanchor="left",
+        yanchor="middle"
+    )
+    #annotations for right side
+    fig.add_annotation(
+        x=1, y=-0.2,
+        text=f"{pct_pos:.1%} of games",
+        showarrow=False,
+        font=dict(size=24, color="grey", family="Bahnschrift, Segoe UI, Arial"),
+        xref="x",
+        yref="y",
+        xanchor="left",
+        yanchor="middle"
+    )
+    fig.add_annotation(
+        x=1, y=0.2,
+        text="Winning player robbed more",
+        showarrow=False,
+        font=dict(size=24, color="grey", family="Bahnschrift, Segoe UI, Arial"),
+        xref="x",
+        yref="y",
+        xanchor="left",
+        yanchor="middle"
+    )
+    #color different sides of y axis
+    fig.add_vrect(
+        x0=-1e9,
+        x1=0,
+        fillcolor=color_dict[2],
+        opacity=0.15,
+        line_width=0,
+        layer="below"
+    )
+    fig.add_vrect(
+        x0=0,
+        x1=1e9,
+        fillcolor=color_dict[1],
+        opacity=0.15,
+        line_width=0,
+        layer="below"
     )
     return fig
