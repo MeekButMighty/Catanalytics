@@ -95,7 +95,7 @@ def robber_counter(events, player):
     stolen = 0
     for event in events:
         event_lower = event.lower()
-        if 'from ' + player in event_lower:
+        if 'from ' + player in event_lower and 'stole' in event_lower:
             stolen_from += 1
         elif player in event_lower and 'stole' in event_lower:
             stolen += 1

@@ -403,6 +403,14 @@ def pi_series(firsts_df):
     return fig
 
 def plot_robbed(master_df, turns_df):
+    timestamp_dict = (
+        turns_df.groupby('game_id')['timestamp']
+        .first()
+        .to_dict()
+    )
+    #trim timestamps to just firt 10 characters for better display
+    timestamp_dict = {game_id: timestamp[:10] for game_id, timestamp in timestamp_dict.items()}
+
     p2_lead_dict = p2_lead_pct(turns_df)
     robbed_df = master_df.pivot(
         index="game_id",
@@ -411,6 +419,7 @@ def plot_robbed(master_df, turns_df):
     )
     robbed_df['diff_1_2'] = robbed_df[1] - robbed_df[2]
     robbed_df['p2_lead_pct'] = robbed_df.index.map(p2_lead_dict)
+    robbed_df['timestamp'] = robbed_df.index.map(timestamp_dict)
     pct_neg = (robbed_df['diff_1_2'] < 0).mean()
     pct_pos = (robbed_df['diff_1_2'] > 0).mean()
     fig = go.Figure()
@@ -418,6 +427,7 @@ def plot_robbed(master_df, turns_df):
         x=robbed_df['diff_1_2'],
         y=np.random.normal(0, 0.05, len(robbed_df)),  # jitter around 0,
         mode='markers',
+        customdata=robbed_df[['timestamp']],
         marker=dict(color=robbed_df['p2_lead_pct'], colorscale=[
             [0.0, "#cbd5e1"],
             [1.0, "#0061FE"]
@@ -430,8 +440,9 @@ def plot_robbed(master_df, turns_df):
                 len=1.1
                 ),
             showscale=True),
-            hovertemplate=("Difference in times robbed: %{x}<br>"
-                           "Runner-up led %{marker.color:.1%} of the game<extra></extra>")
+            hovertemplate=("Game date: %{customdata[0]}<br>"
+                "Difference in times robbed: %{x}<br>"
+                "Runner-up led %{marker.color:.1%} of the game<extra></extra>")
     ))
     fig.update_layout(
         xaxis_title="Difference in Times Robbed (1st Place - 2nd Place)",
@@ -443,7 +454,7 @@ def plot_robbed(master_df, turns_df):
             zeroline=False,
             automargin=False
         ),
-        xaxis=dict(range=[-12,12], tickmode="array", \
+        xaxis=dict(range=[-12,11], tickmode="array", \
                    tickvals=[-10, -5, 0, 5, 10], ticktext=['-10', '-5', '0', '5', '10'],
                    showgrid=False,
                    zeroline=True, zerolinewidth=1, zerolinecolor='lightgray', 
