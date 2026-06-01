@@ -12,7 +12,8 @@ from src.plots import (
     plot_grouped_bar,
     plot_length_hist,
     pi_series,
-    plot_robbed
+    plot_robbed,
+    plot_resource
 )
 from src.helpers import render_hex, kpi, time_dict, make_firsts_df
 
@@ -256,4 +257,22 @@ st.markdown("""
         </div>
     """, unsafe_allow_html=True)
 st.plotly_chart(plot_robbed(master, turns),  width='stretch', config={"displayModeBar": False})
+
+col1, col2 = st.columns([4, 2], vertical_alignment="center")
+with col1:
+    st.markdown("""
+        <div style='font-size:28px; font-weight:600;
+        font-family: Bahnschrift, Segoe UI;'>
+        No one resource is the key to victory
+        </div>
+    """, unsafe_allow_html=True)
+    st.markdown("""
+        <div style='font-size:20px; font-weight:600;
+        font-family: Bahnschrift, Segoe UI;'>
+        Distributions and medians of resources accrued by dice rolls for winning players
+        </div>
+    """, unsafe_allow_html=True)
+    st.plotly_chart(plot_resource(master), width='stretch', config={"displayModeBar": False})
+
+
 #st.pyplot(plot_avg_prog(progress))

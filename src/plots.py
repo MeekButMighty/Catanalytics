@@ -15,6 +15,13 @@ color_dict = {
     4: '#3c78d8',   # Rose
     5: '#38761d'   # Green (for 5+ player games)
 }
+resource_colors = {
+    'Brick': '#B87333',
+    'Grain': '#D4AF37',
+    'Ore': '#B0B7C0',
+    'Lumber': '#38761d',
+    'Wool': '#88b773'
+}
 
 def plot_grouped_bar(master_df):
     vp_breakdown = master_df[['rank', 'vp_settle', 'vp_city', 'vp_dc', 'longest_road', 'largest_army']].copy()
@@ -521,4 +528,75 @@ def plot_robbed(master_df, turns_df):
         line_width=0,
         layer="below"
     )
+    return fig
+
+def plot_resource(master_df):
+    resources = master_df[["rank","Brick", "Grain", "Ore", "Lumber", "Wool"]].copy()
+    winner_resources = resources[resources['rank'] == 1].drop(columns='rank')
+
+    melted = winner_resources.melt(var_name='Resource', value_name='Count')
+
+    fig = go.Figure()
+
+    for resource in melted['Resource'].unique():
+        subset = melted[melted['Resource'] == resource]
+
+        median_val = subset['Count'].median()
+        q1 = subset['Count'].quantile(0.25)
+        q3 = subset['Count'].quantile(0.75)
+
+        fig.add_trace(
+            go.Violin(
+                x=subset['Resource'],
+                y=subset['Count'],
+                name=resource,
+                hoveron="violins",
+                line_color=resource_colors[resource],
+                box_visible=True,
+                meanline_visible=True,
+                hoverinfo='skip'
+            )
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=[resource],
+                y=[median_val],
+                mode='markers',
+                marker=dict(size=20, opacity=0),
+                customdata=[[q1, median_val, q3]],
+                hovertemplate=(
+                    f"<b>{resource}</b><br>"
+                    "Q3: %{customdata[2]:.1f}<br>"
+                    "Median: %{customdata[1]:.1f}<br>"
+                    "Q1: %{customdata[0]:.1f}"
+                    "<extra></extra>"
+                ),
+                showlegend=False
+            )
+        )
+
+
+        fig.add_annotation(
+            x=resource,
+            y=median_val,
+            text=f"{median_val:.1f}",
+            showarrow=False,
+            xshift=55,
+            font=dict(size=16, family='Bahnschrift', color=resource_colors[resource])
+        )
+
+    fig.update_layout(
+        showlegend=False,
+        yaxis = dict(
+            range=[0, melted['Count'].max() + 7],
+            fixedrange=True
+        ),
+        xaxis = dict(
+            range=[-0.5, len(melted['Resource'].unique())-0.30],
+            fixedrange=True
+        ),
+        margin=dict(l=0, r=20, t=20, b=20),
+        height=350
+    )
+
     return fig
