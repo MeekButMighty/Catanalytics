@@ -45,9 +45,9 @@ def make_master_df(df):
            "stolen_from", 'stole']
 
     master_df = pd.DataFrame(columns= columns)
-    game_id = 1
     for _, row in df.iterrows():
         # Create list of players ranked
+        game_id = row['game_id']
         players_ranked = rank_players(row)
         place_order = get_place_order(row)
         events = [event["text"] for event in row["events"]]
@@ -75,7 +75,6 @@ def make_master_df(df):
                 "stole": robber_counter(events, player)[1]
             }
             master_df.loc[len(master_df)] = new_row
-        game_id+=1
 
     return master_df
 
@@ -86,9 +85,9 @@ def make_turns_df(df):
            "p3_vps", "p3_dcs", "p3_settles", "p3_cities",
            "p4_vps", "p4_dcs", "p4_settles", "p4_cities"]
     turns_df = pd.DataFrame(columns=columns)
-    game_id = 1
     for _, row in df.iterrows():
         # Create list of players ranked
+        game_id = row['game_id']
         timestamp= row['timestamp']
         players_ranked = rank_players(row)
         cropped_game = game_cropper(row)
@@ -137,7 +136,6 @@ def make_turns_df(df):
         # Correct final scores to be in 1.0 percentage bin
         turns_df.loc[turns_df['game_percentage'] == 1.0, 'percentage_bin'] = 1.0
 
-        game_id += 1
     return turns_df      
 
 def make_avg_prog_df(df):

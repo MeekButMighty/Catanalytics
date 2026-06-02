@@ -1,3 +1,5 @@
+import pandas as pd
+import sqlite3
 from src.io import load_all_games
 from src.transforms import (
     make_placement_df,
@@ -62,12 +64,32 @@ div[data-testid="stPlotlyChart"] > div {
 # -------------------------
 # CACHED DATA PIPELINE
 # -------------------------
+#@st.cache_data
+#def load_data():
+#    raw_df = load_all_games()
+#    master = make_master_df(raw_df)
+#    turns = make_turns_df(raw_df)
+#    progress = make_avg_prog_df(turns)
+#    return master, turns, progress
 @st.cache_data
 def load_data():
-    raw_df = load_all_games()
-    master = make_master_df(raw_df)
-    turns = make_turns_df(raw_df)
+
+    conn = sqlite3.connect("catan.db")
+
+    master = pd.read_sql(
+        "SELECT * FROM master",
+        conn
+    )
+
+    turns = pd.read_sql(
+        "SELECT * FROM turns",
+        conn
+    )
+
+    conn.close()
+
     progress = make_avg_prog_df(turns)
+
     return master, turns, progress
 
 

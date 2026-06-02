@@ -4,3 +4,6 @@ data/
 #cache
 __pycache__/
 
+#data
+catan.db/
+

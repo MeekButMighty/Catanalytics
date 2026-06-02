@@ -58,7 +58,7 @@ def update_turns_df(game_id, turns_df, turns, player_columns, dc_dict):
                     if last_row[dc_col] > non_vp_dcs:
                         last_row[vp_col] += 1
                         #print(f"Turn {turn}: {player} bought a VP Development Card. +1 VP")
-                elif "passed from "+player in event or "lost" in event:
+                elif "passed from "+player in event or ("lost" in event and player in event):
                      last_row[vp_col] -= 2
                      #print(f"Turn {turn}: {player} lost an award")
                 elif "passed" in event and 'to '+player in event:
