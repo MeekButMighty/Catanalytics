@@ -20,6 +20,20 @@ from src.plots import (
 from src.helpers import render_hex, kpi, time_dict, make_firsts_df
 
 import streamlit as st
+from streamlit_autorefresh import st_autorefresh
+import threading
+from watch import start_watch
+
+if "watcher_started" not in st.session_state:
+    threading.Thread(target=start_watch, daemon=True).start()
+    st.session_state["watcher_started"] = True
+
+
+# refresh data every 60 seconds to pick up new games
+st_autorefresh(
+    interval=60 * 1000,
+    key="datarefresh"
+)  
 
 # -------------------------
 # CONFIG
@@ -71,7 +85,7 @@ div[data-testid="stPlotlyChart"] > div {
 #    turns = make_turns_df(raw_df)
 #    progress = make_avg_prog_df(turns)
 #    return master, turns, progress
-@st.cache_data
+@st.cache_data(ttl=60)
 def load_data():
 
     conn = sqlite3.connect("catan.db")
@@ -88,17 +102,15 @@ def load_data():
 
     conn.close()
 
-    progress = make_avg_prog_df(turns)
-
-    return master, turns, progress
+    return master, turns
 
 
-@st.cache_data
+@st.cache_data(ttl=60)
 def get_timestamp_options(turns):
     return time_dict(turns)
 
 
-@st.cache_data
+@st.cache_data(ttl=60)
 def get_kpis(master, turns):
     return kpi(master, turns)
 
@@ -106,7 +118,7 @@ def get_kpis(master, turns):
 # -------------------------
 # LOAD DATA (cached)
 # -------------------------
-master, turns, progress = load_data()
+master, turns = load_data()
 
 
 # -------------------------
