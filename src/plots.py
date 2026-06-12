@@ -600,3 +600,56 @@ def plot_resource(master_df):
     )
 
     return fig
+
+def final_scores(master):
+    scores = master[['game_id', 'rank', 'vp_total']]
+
+    # One row per game
+    wide = (
+        scores
+        .pivot(index='game_id', columns='rank', values='vp_total')
+        .reset_index()
+    )
+
+    # Sort from closest games to biggest blowouts
+    wide = wide.sort_values(
+        [2, 3, 4],
+        ascending=False
+    ).reset_index(drop=True)
+
+    # Vertical position of each game
+    wide['x'] = np.arange(len(wide)) * 1.5
+
+    fig = go.Figure()
+
+    for _, row in wide.iterrows():
+
+        x = row['x']
+        #plot as overlapping bar
+        for place in [1,2,3,4]:
+            fig.add_trace(
+                go.Bar(
+                    x=wide.index,
+                    y=wide[place],
+                    marker=dict(
+                        color=color_dict[place],
+                        line=dict(width=0),
+                    ),
+                    name=f'{place} Place'#,
+                    #hoverinfo="skip"
+                )
+            )
+    fig.update_layout(
+        barmode='overlay',
+        bargap=0,
+        #yaxis_range=[0,10],
+        yaxis=dict(range=[0,10]),
+        xaxis=dict(visible=False),
+        legend=dict(visible=False),
+        margin=dict(l=0, r=20, t=20, b=20),
+        height=350
+    )
+    #add horizontal line at 2
+    fig.add_hline(y=2, line_width=1, line_color="white", opacity=0.7)
+    
+    return fig
