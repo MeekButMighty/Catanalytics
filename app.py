@@ -293,7 +293,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 st.plotly_chart(plot_robbed(master, turns),  width='stretch', config={"displayModeBar": False})
 
-col1, col2 = st.columns([2, 2], vertical_alignment="center")
+col1, col2 = st.columns([2, 2], vertical_alignment="top")
 with col1:
     st.markdown("""
         <div style='font-size:28px; font-weight:600;
@@ -309,6 +309,8 @@ with col1:
     """, unsafe_allow_html=True)
     st.plotly_chart(plot_resource(master), width='stretch', config={"displayModeBar": False})
 
+
+chart, vals = final_scores(master)
 with col2:
     st.markdown("""
         <div style='font-size:28px; font-weight:600;
@@ -322,5 +324,14 @@ with col2:
         Games sorted by final score spread
         </div>
     """, unsafe_allow_html=True)
-    st.plotly_chart(final_scores(master), width='stretch', config={"displayModeBar": False})
+    st.plotly_chart(chart, width='stretch', config={"displayModeBar": False})
+    st.markdown(f"""
+        <div style='font-size:15px;
+        font-family: Bahnschrift, Segoe UI;
+        margin-left:30px;'>
+        - In <b>{vals[0]}%</b> of games, the margin of victory was only 1 VP. <br>
+        - In <b>{vals[1]}%</b> of games, the margin of victory was 2 VPs. <br>
+        - In <b>{vals[2]}%</b> of games, the margin of victory was 3 or more VPs.
+        </div>
+    """, unsafe_allow_html=True)
 #st.pyplot(plot_avg_prog(progress))

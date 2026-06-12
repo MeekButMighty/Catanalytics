@@ -80,7 +80,7 @@ def plot_length_hist(turns_df):
     fig.add_trace(
         go.Histogram(
             x=lengths,
-            nbinsx=12,
+            nbinsx=15,
             marker_color=color_dict[5]
         )
     )
@@ -595,8 +595,8 @@ def plot_resource(master_df):
             range=[-0.5, len(melted['Resource'].unique())-0.30],
             fixedrange=True
         ),
-        margin=dict(l=0, r=20, t=20, b=20),
-        height=350
+        margin=dict(l=0, r=20, t=20, b=0),
+        height=325
     )
 
     return fig
@@ -620,6 +620,13 @@ def final_scores(master):
     # Vertical position of each game
     wide['x'] = np.arange(len(wide)) * 1.5
 
+    #count proportions
+    num_games = len(wide)
+    margin_1 = (len(wide[(wide[1]-wide[2])==1])/num_games)*100
+    margin_2 = (len(wide[(wide[1]-wide[2])==2])/num_games)*100
+    margin_3plus = (len(wide[(wide[1]-wide[2])>=3])/num_games)*100
+    margins = [margin_1, margin_2, margin_3plus]
+
     fig = go.Figure()
 
     for _, row in wide.iterrows():
@@ -635,10 +642,48 @@ def final_scores(master):
                         color=color_dict[place],
                         line=dict(width=0),
                     ),
-                    name=f'{place} Place'#,
-                    #hoverinfo="skip"
+                    name=f'{place} Place',
+                    hoverinfo="skip"
                 )
             )
+    #invisible trace for hover
+    for i, row in wide.iterrows():
+        timestamp = row['game_id'][14:]
+        timestamp_valid = pd.to_datetime(
+                timestamp,
+                format="%Y-%m-%d_%H-%M-%S"
+            ).strftime("%B %d, %Y at %I:%M %p")
+        fig.add_trace(
+            go.Bar(
+                x=[i],  
+                y=[10],# * len(wide), 
+                marker=dict(
+                    color="rgba(0,0,0,0)",
+                    line=dict(width=0)
+                ),
+                customdata=[[
+                    timestamp_valid,
+                    int(row[1]),
+                    int(row[2]),
+                    int(row[3]),
+                    int(row[4]),
+                    int(row[1] - row[2])  # margin of victory
+                ]],
+                hovertemplate=(
+                    "<b>%{customdata[0]}</b><br>"
+                    "Winner: %{customdata[1]} VP<br>"
+                    "Runner-up: %{customdata[2]} VP<br>"
+                    "3rd: %{customdata[3]} VP<br>"
+                    "4th: %{customdata[4]} VP<br>"
+                    "<br>"
+                    "Margin: %{customdata[5]} VP"
+                    "<extra></extra>"
+                ),
+                showlegend=False
+            )
+        )
+
+
     fig.update_layout(
         barmode='overlay',
         bargap=0,
@@ -646,10 +691,11 @@ def final_scores(master):
         yaxis=dict(range=[0,10]),
         xaxis=dict(visible=False),
         legend=dict(visible=False),
-        margin=dict(l=0, r=20, t=20, b=20),
-        height=350
+        margin=dict(l=0, r=20, t=20, b=0),
+        height=300
     )
     #add horizontal line at 2
     fig.add_hline(y=2, line_width=1, line_color="white", opacity=0.7)
     
-    return fig
+    return fig, margins
+    
