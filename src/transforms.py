@@ -1,6 +1,7 @@
 import pandas as pd
 from src.helpers import game_cropper, count_dcs, rank_players, update_turns_df
 from src.helpers import get_place_order, resource_counter, dc_counter, robber_counter
+from src.helpers import count_discards, count_trades
 
 
 def make_placement_df(df):
@@ -42,7 +43,9 @@ def make_master_df(df):
            "vp_total", "vp_settle", "vp_city", "vp_dc",
            "longest_road", "largest_army", "dcs_purchased",
            "Brick", "Grain", "Ore", "Lumber", "Wool",
-           "stolen_from", 'stole']
+           "stolen_from", 'stole', 'times_discarded', 'cards_discarded',
+           'tot_trades', 'trades_init', 'trades_accep',
+           'margin', 'spread']
 
     master_df = pd.DataFrame(columns= columns)
     for _, row in df.iterrows():
@@ -50,10 +53,14 @@ def make_master_df(df):
         game_id = row['game_id']
         players_ranked = rank_players(row)
         place_order = get_place_order(row)
+        scores = [plr["victoryPoints"] for plr in row["playerSummary"]]
+        margin = scores[0]-scores[1]
+        spread = scores[0]-scores[3]
         events = [event["text"] for event in row["events"]]
         for player in players_ranked:
             summ_stats = next(
                 (p for p in row["playerSummary"] if p["name"] == player))
+            tot_trades, trades_init, trades_accep = count_trades(events, player)
             new_row = {
                 "game_id": game_id,
                 "player": player,
@@ -72,7 +79,14 @@ def make_master_df(df):
                 "Lumber": resource_counter(events, player, 'Lumber'), 
                 "Wool":resource_counter(events, player, 'Wool'),
                 "stolen_from": robber_counter(events, player)[0],
-                "stole": robber_counter(events, player)[1]
+                "stole": robber_counter(events, player)[1],
+                "times_discarded": count_discards(events, player)[1],
+                "cards_discarded": count_discards(events, player)[0],
+                "tot_trades": tot_trades,
+                "trades_init": trades_init,
+                "trades_accep": trades_accep,
+                "margin": margin,
+                "spread": spread
             }
             master_df.loc[len(master_df)] = new_row
 

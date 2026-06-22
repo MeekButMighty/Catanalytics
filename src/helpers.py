@@ -178,6 +178,30 @@ def p2_lead_pct(turns_df):
         p2_lead_dict[game_id] = p2_lead_pct
     return p2_lead_dict
 
+def count_discards(events, player):
+    count = 0
+    cards = 0
+    for event in events:
+        if player+" discarded" in event:
+            discarded = event.count('[')
+            cards += discarded
+            count += 1
+    return cards, count
+
+def count_trades(events, player):
+    trades = 0
+    trades_init = 0
+    trades_accep = 0
+    for event in events:
+        if player+" gave" in event and "bank" not in event:
+            trades += 1
+            trades_init += 1
+        if "from "+player in event and "gave" in event:
+            trades += 1
+            trades_accep += 1
+    return trades, trades_init, trades_accep
+
+
 def make_firsts_df(turns_df):
     columns = [
         "game_id",

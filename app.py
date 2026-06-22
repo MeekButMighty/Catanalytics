@@ -329,9 +329,9 @@ with col2:
         <div style='font-size:15px;
         font-family: Bahnschrift, Segoe UI;
         margin-left:30px;'>
-        - In <b>{vals[0]}%</b> of games, the margin of victory was only 1 VP. <br>
-        - In <b>{vals[1]}%</b> of games, the margin of victory was 2 VPs. <br>
-        - In <b>{vals[2]}%</b> of games, the margin of victory was 3 or more VPs.
+        - In <b>{vals[0]: .1f}%</b> of games, the margin of victory was only 1 VP. <br>
+        - In <b>{vals[1]: .1f}%</b> of games, the margin of victory was 2 VPs. <br>
+        - In <b>{vals[2]: .1f}%</b> of games, the margin of victory was 3 or more VPs.
         </div>
     """, unsafe_allow_html=True)
 #st.pyplot(plot_avg_prog(progress))
