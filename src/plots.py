@@ -409,7 +409,7 @@ def pi_series(firsts_df):
 
     return fig
 
-def plot_robbed(master_df, turns_df):
+def plot_robbed(master_df, turns_df, margin=None):
     timestamp_dict = (
         turns_df.groupby('game_id')['timestamp']
         .first()
@@ -419,7 +419,13 @@ def plot_robbed(master_df, turns_df):
     timestamp_dict = {game_id: timestamp[:10] for game_id, timestamp in timestamp_dict.items()}
 
     p2_lead_dict = p2_lead_pct(turns_df)
-    robbed_df = master_df.pivot(
+
+    #filter
+    df = master_df.copy()
+    if margin is not None:
+        df = df[df["margin_group"].isin(margin)]
+    
+    robbed_df = df.pivot(
         index="game_id",
         columns="rank",
         values="stolen_from"

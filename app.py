@@ -278,20 +278,41 @@ with col1:
 with col2:
     st.plotly_chart(pi_series(firsts_df), width='stretch', config={"displayModeBar": False})
 
+col1, col2 = st.columns([10, 2], gap="small")
+with col1:
+    st.markdown("""
+            <div style='font-size:28px; font-weight:600;
+            font-family: Bahnschrift, Segoe UI;'>
+            Target on your back: can taking the lead too early set you up for failure?
+            </div>
+        """, unsafe_allow_html=True)
+    st.markdown("""
+            <div style='font-size:20px; font-weight:600;
+            font-family: Bahnschrift, Segoe UI;'>
+            Distribution of robber disparities between winning player and runner-up
+            </div>
+        """, unsafe_allow_html=True)
 
-st.markdown("""
-        <div style='font-size:28px; font-weight:600;
-        font-family: Bahnschrift, Segoe UI;'>
-        Target on your back: can taking the lead too early set you up for failure?
-        </div>
-    """, unsafe_allow_html=True)
-st.markdown("""
-        <div style='font-size:20px; font-weight:600;
-        font-family: Bahnschrift, Segoe UI;'>
-        Distribution of robber disparities between winning player and runner-up
-        </div>
-    """, unsafe_allow_html=True)
-st.plotly_chart(plot_robbed(master, turns),  width='stretch', config={"displayModeBar": False})
+with col2:
+    st.markdown("""
+            <div style='font-size:15px; font-weight:600;
+            font-family: Bahnschrift, Segoe UI;'>
+            Filter by margin of victory:
+            </div>
+        """, unsafe_allow_html=True)
+    m1 = st.checkbox("1", value=True)
+    m2 = st.checkbox("2", value=True)
+    m3 = st.checkbox("3+", value=True)
+
+master["margin_group"] = master["margin"].apply(
+    lambda x: "3+" if x >= 3 else str(x)
+)   
+
+margin_choice = []
+if m1: margin_choice.append("1")
+if m2: margin_choice.append("2")
+if m3: margin_choice.append("3+")
+st.plotly_chart(plot_robbed(master, turns, margin=margin_choice),  width='stretch', config={"displayModeBar": False})
 
 col1, col2 = st.columns([2, 2], vertical_alignment="top")
 with col1:
