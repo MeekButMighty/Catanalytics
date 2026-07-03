@@ -1,0 +1,35 @@
+services:
+  catanalytics-api:
+    image: python:3.12-slim
+    container_name: catanalytics-api
+    restart: unless-stopped
+    working_dir: /app
+    command: sh -c "pip install --no-cache-dir -r requirements.txt && gunicorn -w 1 -b 0.0.0.0:8000 server:app"
+    volumes:
+      - ./:/app:ro
+      - ./data:/data
+      - pip-cache:/root/.cache/pip
+    environment:
+      CATAN_DB_PATH: /data/catan.db
+      CATAN_API_KEY: ${CATAN_API_KEY}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://localhost:8000/healthz')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - web
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.catanalytics-api.rule=Host(`${CATANALYTICS_DOMAIN}`)
+      - traefik.http.routers.catanalytics-api.entrypoints=websecure
+      - traefik.http.routers.catanalytics-api.tls=true
+      - traefik.http.routers.catanalytics-api.tls.certresolver=${TRAEFIK_CERTRESOLVER}
+      - traefik.http.services.catanalytics-api.loadbalancer.server.port=8000
+
+networks:
+  web:
+    external: true
+
+volumes:
+  pip-cache:
