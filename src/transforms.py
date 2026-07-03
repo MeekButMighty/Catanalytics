@@ -1,7 +1,17 @@
 import pandas as pd
-from src.helpers import game_cropper, count_dcs, rank_players, update_turns_df
-from src.helpers import get_place_order, resource_counter, dc_counter, robber_counter
-from src.helpers import count_discards, count_trades
+
+from src.helpers import (
+    game_cropper,
+    rank_players,
+    update_turns_df,
+    get_place_order,
+    resource_counter,
+    dc_counter,
+    robber_counter,
+    count_discards,
+    count_trades,
+    count_actions
+)
 
 
 def make_placement_df(df):
@@ -45,7 +55,7 @@ def make_master_df(df):
            "Brick", "Grain", "Ore", "Lumber", "Wool",
            "stolen_from", 'stole', 'times_discarded', 'cards_discarded',
            'tot_trades', 'trades_init', 'trades_accep',
-           'margin', 'spread']
+           'margin', 'spread', 'roads_built', 'dcs_bought']
 
     master_df = pd.DataFrame(columns= columns)
     for _, row in df.iterrows():
@@ -86,7 +96,9 @@ def make_master_df(df):
                 "trades_init": trades_init,
                 "trades_accep": trades_accep,
                 "margin": margin,
-                "spread": spread
+                "spread": spread,
+                "roads_built": count_actions(events, player, 'road'),
+                "dcs_bought": count_actions(events, player, 'dc')
             }
             master_df.loc[len(master_df)] = new_row
 

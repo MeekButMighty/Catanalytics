@@ -201,6 +201,17 @@ def count_trades(events, player):
             trades_accep += 1
     return trades, trades_init, trades_accep
 
+def count_actions(events, player, action):
+    count = 0
+    if action == 'road':
+        for event in events:
+            if player +  ' built a Road' in event:
+                count += 1
+    elif action == 'dc':
+        for event in events:
+            if player + ' bought [Development Card]' in event:
+                count += 1
+    return count
 
 def make_firsts_df(turns_df):
     columns = [
