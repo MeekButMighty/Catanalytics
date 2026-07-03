@@ -21,11 +21,35 @@ services:
       - web
     labels:
       - traefik.enable=true
-      - traefik.http.routers.catanalytics-api.rule=Host(`${CATANALYTICS_DOMAIN}`)
+      - traefik.http.routers.catanalytics-api.rule=Host(`${API_DOMAIN}`)
       - traefik.http.routers.catanalytics-api.entrypoints=websecure
       - traefik.http.routers.catanalytics-api.tls=true
-      - traefik.http.routers.catanalytics-api.tls.certresolver=${TRAEFIK_CERTRESOLVER}
       - traefik.http.services.catanalytics-api.loadbalancer.server.port=8000
+
+  catanalytics-dashboard:
+    image: python:3.12-slim
+    container_name: catanalytics-dashboard
+    restart: unless-stopped
+    working_dir: /app
+    command: sh -c "pip install --no-cache-dir -r requirements.txt && streamlit run app.py --server.address=0.0.0.0 --server.port=8501 --server.headless=true"
+    volumes:
+      - ./:/app:ro
+      - ./data:/app/data
+      - ./data/catan.db:/app/catan.db
+      - pip-cache:/root/.cache/pip
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://localhost:8501/_stcore/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - web
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.catanalytics-dashboard.rule=Host(`${DASHBOARD_DOMAIN}`)
+      - traefik.http.routers.catanalytics-dashboard.entrypoints=websecure
+      - traefik.http.routers.catanalytics-dashboard.tls=true
+      - traefik.http.services.catanalytics-dashboard.loadbalancer.server.port=8501
 
 networks:
   web:
