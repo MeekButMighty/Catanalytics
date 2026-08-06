@@ -168,3 +168,49 @@ def make_avg_prog_df(df):
     average_vps = df.groupby('percentage_bin')[['p1_vps', 'p2_vps', 'p3_vps', 'p4_vps']].mean().reset_index()
     return average_vps
 
+def make_checkpt_df(turns_vps, checkpoints):
+    # get turn number that each player reached each checkpoint
+    checkpt_df = pd.DataFrame(columns=['game_id', 'player'] + checkpoints)
+
+    for game_id in turns_vps['game_id'].unique():
+        game_turns = turns_vps[turns_vps['game_id'] == game_id]
+        # store turn values for this game
+        game_cp_turns = []
+
+        for player_idx, vp_col in enumerate(["p1_vps", "p2_vps", "p3_vps", "p4_vps"]):
+            player_name = f"p{player_idx + 1}"
+            cp_dict = {}
+
+            for cp in checkpoints:
+                turn_cp = (
+                    game_turns.loc[game_turns[vp_col] >= cp, "turn"].iloc[0]
+                    if (game_turns[vp_col] >= cp).any()
+                    else 'NR'
+                )
+                cp_dict[cp] = turn_cp
+
+            game_cp_turns.append({
+                'game_id': game_id,
+                'player': player_name,
+                **cp_dict
+            })
+
+        # convert to dataframe so we can rank each checkpoint
+        game_cp_df = pd.DataFrame(game_cp_turns)
+
+        # convert turns into order reached
+        for cp in checkpoints:
+            valid = game_cp_df[game_cp_df[cp] != 'NR']
+
+            game_cp_df.loc[valid.index, cp] = (
+                valid[cp]
+                .rank(method="min")
+                .astype(int)
+            )
+
+        checkpt_df = pd.concat(
+            [checkpt_df, game_cp_df],
+            ignore_index=True
+        )
+
+    return checkpt_df

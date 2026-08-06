@@ -16,7 +16,8 @@ from src.plots import (
     pi_series,
     plot_robbed,
     plot_resource,
-    final_scores
+    final_scores,
+    sankey
 )
 from src.helpers import render_hex, kpi, time_dict, make_firsts_df
 
@@ -101,9 +102,14 @@ def load_data():
         conn
     )
 
+    checkpt = pd.read_sql(
+        "SELECT * FROM checkpoints",
+        conn
+    )
+
     conn.close()
 
-    return master, turns
+    return master, turns, checkpt
 
 
 @st.cache_data(ttl=60)
@@ -119,7 +125,7 @@ def get_kpis(master, turns):
 # -------------------------
 # LOAD DATA (cached)
 # -------------------------
-master, turns = load_data()
+master, turns, checkpt = load_data()
 
 
 # -------------------------
@@ -355,4 +361,9 @@ with col2:
         - In <b>{vals[2]: .1f}%</b> of games, the margin of victory was 3 or more VPs.
         </div>
     """, unsafe_allow_html=True)
+
+sankey_chart = sankey(checkpt)
+st.plotly_chart(sankey_chart, width='stretch')
+
+
 #st.pyplot(plot_avg_prog(progress))

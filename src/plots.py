@@ -704,4 +704,66 @@ def final_scores(master):
     fig.add_hline(y=2, line_width=1, line_color="white", opacity=0.7)
     
     return fig, margins
-    
+
+def sankey(checkpt_df):
+    #group 3rd and 4th place together for middle checkpoints
+    for cp in ['5', '7', '9']:
+        checkpt_df[cp] = checkpt_df[cp].replace({4: 3})
+    #list transitions
+    transitions = []
+    for _, row in checkpt_df.iterrows():
+        stages = ['3', '5', '7', '9'] + ["Final"]
+
+        # add final rank (p1=1st, p2=2nd, etc.)
+        values = [row[cp] for cp in ['3', '5', '7', '9']]
+        values.append(int(row["player"][1]))  # p1 -> 1, p2 -> 2, etc.
+
+        for i in range(len(stages)-1):
+            source = f"{stages[i]}VP-{values[i]}"
+            target = f"{stages[i+1]}VP-{values[i+1]}"
+
+            # don't create flows after someone never reached a checkpoint
+            #if values[i] != -1:
+            transitions.append({
+                    "source": source,
+                    "target": target
+                })
+
+    transitions = pd.DataFrame(transitions)
+    links = transitions.groupby(["source", "target"]).size().reset_index(name="count")
+
+    # Get all unique nodes
+    labels = list(set(links["source"]).union(set(links["target"])))
+
+    # Map labels to integer IDs
+    label_to_id = {label: i for i, label in enumerate(labels)}
+
+    # Convert source/target columns to IDs
+    links["source_id"] = links["source"].map(label_to_id)
+    links["target_id"] = links["target"].map(label_to_id)
+
+    # Create the Sankey diagram
+    fig = go.Figure(
+        go.Sankey(
+            arrangement="snap",
+            node=dict(
+                label=labels,
+                pad=20,
+                thickness=20,
+                color="lightblue"
+            ),
+            link=dict(
+                source=links["source_id"],
+                target=links["target_id"],
+                value=links["count"]
+            )
+        )
+    )
+
+    fig.update_layout(
+        title="Catan VP Progression",
+        height=400,
+        width=800,
+    )
+
+    return fig    
