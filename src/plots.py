@@ -709,6 +709,10 @@ def sankey(checkpt_df):
     #group 3rd and 4th place together for middle checkpoints
     for cp in ['5', '7', '9']:
         checkpt_df[cp] = checkpt_df[cp].replace({4: 3})
+        checkpt_df[cp] = checkpt_df[cp].replace({'4': '3'})
+
+    #filter out games where 3 pts was never reached by any player
+    checkpt_df = checkpt_df[checkpt_df['3'] != 'NR']
     #list transitions
     transitions = []
     for _, row in checkpt_df.iterrows():
@@ -732,15 +736,62 @@ def sankey(checkpt_df):
     transitions = pd.DataFrame(transitions)
     links = transitions.groupby(["source", "target"]).size().reset_index(name="count")
 
-    # Get all unique nodes
-    labels = list(set(links["source"]).union(set(links["target"])))
+    #fix order
+    labels = (
+        [f"3VP-{i}" for i in [1,2,3,4]] +
+        [f"5VP-{i}" for i in [1,2,3, 'NR']] +
+        [f"7VP-{i}" for i in [1,2,3, 'NR']] +
+        [f"9VP-{i}" for i in [1,2,3, 'NR']] +
+        [f"FinalVP-{i}" for i in [1,2,3,4]]
+    )
 
-    # Map labels to integer IDs
     label_to_id = {label: i for i, label in enumerate(labels)}
 
     # Convert source/target columns to IDs
     links["source_id"] = links["source"].map(label_to_id)
     links["target_id"] = links["target"].map(label_to_id)
+
+    stage_x = {
+        "3": 0.00,
+        "5": 0.25,
+        "7": 0.50,
+        "9": 0.75,
+        "Final": 1.00,
+    }
+
+    node_x = {
+        f"{stage}VP-{rank}": x
+        for stage, x in stage_x.items()
+        for rank in (
+            [1, 2, 3, 4]
+            if stage in {"3", "Final"}
+            else [1, 2, 3, "NR"]
+        )
+    }
+
+    node_y = {
+        "3VP-1": 0.05, "3VP-2": 0.20, "3VP-3": 0.35, "3VP-4": 0.50,
+        "5VP-1": 0.05, "5VP-2": 0.25, "5VP-3": 0.45, "5VP-NR": 0.95,
+        "7VP-1": 0.05, "7VP-2": 0.25, "7VP-3": 0.45, "7VP-NR": 0.70,
+        "9VP-1": 0.05, "9VP-2": 0.25, "9VP-3": 0.45, "9VP-NR": 0.60,
+        "FinalVP-1": 0.05, "FinalVP-2": 0.25, "FinalVP-3": 0.50, "FinalVP-4": 0.75,
+    }
+
+    x = [node_x[label] for label in labels]
+    y = [node_y[label] for label in labels]
+
+    rank_colors = {
+        "1": color_dict[1],   # gold
+        "2": color_dict[2],   # silver
+        "3": color_dict[3],   # bronze
+        "4": color_dict[4],   # blue
+        "NR": "#414141"   # gray
+    }
+
+    node_colors = [
+        rank_colors[label.split("-")[1]]
+        for label in labels
+    ]
 
     # Create the Sankey diagram
     fig = go.Figure(
@@ -748,9 +799,11 @@ def sankey(checkpt_df):
             arrangement="snap",
             node=dict(
                 label=labels,
+                x=x,
+                y=y,
                 pad=20,
                 thickness=20,
-                color="lightblue"
+                color=node_colors
             ),
             link=dict(
                 source=links["source_id"],
