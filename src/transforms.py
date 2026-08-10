@@ -10,7 +10,9 @@ from src.helpers import (
     robber_counter,
     count_discards,
     count_trades,
-    count_actions
+    count_actions,
+    port_solver,
+    count_port_usage
 )
 
 
@@ -51,11 +53,12 @@ def make_placement_df(df):
 def make_master_df(df):
     columns = ["game_id","player", "rank", "placement_order",
            "vp_total", "vp_settle", "vp_city", "vp_dc",
-           "longest_road", "largest_army", "dcs_purchased",
+           "longest_road", "largest_army",
            "Brick", "Grain", "Ore", "Lumber", "Wool",
            "stolen_from", 'stole', 'times_discarded', 'cards_discarded',
            'tot_trades', 'trades_init', 'trades_accep',
-           'margin', 'spread', 'roads_built', 'dcs_bought']
+           'margin', 'spread', 'roads_built', 'dcs_bought',
+           'port_3to1', 'port_brick', 'port_grain', 'port_ore', 'port_lumber', 'port_wool']
 
     master_df = pd.DataFrame(columns= columns)
     for _, row in df.iterrows():
@@ -71,6 +74,7 @@ def make_master_df(df):
             summ_stats = next(
                 (p for p in row["playerSummary"] if p["name"] == player))
             tot_trades, trades_init, trades_accep = count_trades(events, player)
+            port_usage = count_port_usage(events, player)
             new_row = {
                 "game_id": game_id,
                 "player": player,
@@ -82,7 +86,6 @@ def make_master_df(df):
                 "vp_dc": int(summ_stats.get('vp_breakdown', 0) or 0),
                 "longest_road": int(summ_stats.get('longest_road', 0) or 0), 
                 "largest_army": int(summ_stats.get('largest_army', 0) or 0),
-                "dcs_purchased": dc_counter(events, player),
                 "Brick": resource_counter(events, player, 'Brick'), 
                 "Grain": resource_counter(events, player, 'Grain'), 
                 "Ore": resource_counter(events, player, 'Ore'), 
@@ -98,7 +101,13 @@ def make_master_df(df):
                 "margin": margin,
                 "spread": spread,
                 "roads_built": count_actions(events, player, 'road'),
-                "dcs_bought": count_actions(events, player, 'dc')
+                "dcs_bought": count_actions(events, player, 'dc'),
+                "port_3to1": port_usage['3:1'],
+                "port_brick": port_usage['Brick'],
+                "port_grain": port_usage['Grain'],
+                "port_ore": port_usage['Ore'],
+                "port_lumber": port_usage['Lumber'],
+                "port_wool": port_usage['Wool']
             }
             master_df.loc[len(master_df)] = new_row
 

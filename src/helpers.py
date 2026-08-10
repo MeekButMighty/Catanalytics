@@ -240,3 +240,103 @@ def make_firsts_df(turns_df):
         rows.append(new_row)
 
     return pd.DataFrame(rows, columns=columns)
+
+def port_solver(inputs, output):
+    """solves tough port trades
+
+    Args:
+        inputs (dictionary): keys are resources, values are how many of each resource were given to the bank. 
+        ex: {'Grain': 0, 'Ore': 3, 'Wool': 2, 'Brick': 0, 'Lumber': 0}
+        output (int): how many resources were received in return.
+    
+    Returns: 
+        dictionary with type of port as keys and how many times each port was used as values. If no valid combination is found, returns an empty dictionary.
+    """
+
+    resources = ['Grain', 'Ore', 'Wool', 'Brick', 'Lumber']
+    port_dict = {resource: 0 for resource in resources}
+    port_dict['3:1'] = 0
+
+    possible_ports = [2,3,4]
+    nonzero_inputs = [i for i in inputs.values() if i > 0]
+
+    num_ports = len(nonzero_inputs)
+    combinations = list(product(possible_ports, repeat=num_ports))
+
+    valid_combinations = []
+
+    for combo in combinations:
+        all_trades = 0
+        for i, input in enumerate(nonzero_inputs):
+            trade = input / combo[i]
+            #if trade is not an integer, skip this combination
+            if trade != int(trade):
+                break
+            all_trades += trade
+        if all_trades == output:
+            valid_combinations.append(combo)
+
+    #if there is only one valid combination, use it
+    if len(valid_combinations) == 1:
+        valid_combo = valid_combinations[0]
+        nonzero_items = [(k, v) for k, v in inputs.items() if v > 0]
+        for i, (resource, count) in enumerate(nonzero_items):
+            if valid_combo[i] == 3:
+                port_dict['3:1'] += count // valid_combo[i]
+            else:
+                port_dict[resource] = count // valid_combo[i]
+        return port_dict
+
+def count_port_usage(events, player):
+    """
+    Count how many times a player used a specific port.
+
+    Parameters:
+        events (list[str]): Trade event strings
+        player (str): Username
+        port (str): Port type ("3:1", "grain", "ore", etc.)
+
+    Returns:
+        dict: A dictionary with port types as keys and their usage counts as values.
+    """
+    resources = ['Grain', 'Ore', 'Wool', 'Brick', 'Lumber']
+
+    port_dict = {resource: 0 for resource in resources}
+    port_dict['3:1'] = 0  # Add a key for the 3:1 port
+
+    for event in events:
+        if not event.startswith(player+ ' gave bank'):
+            continue
+
+        #track resources given and received
+        start = event.find("gave bank")
+        end = event.find("and took")
+        given_text = event[start:end]
+        received_text = event[end:]
+        num_received = received_text.count('[') 
+        num_given = given_text.count('[')
+        given = {}
+        for resource in resources:
+            given[resource]= given_text.count(resource)
+
+        #if only one type of resource was given, then counting is simple
+        if sum(value != 0 for value in given.values()) == 1:
+            resource_given = next((resource for resource, count in given.items() if count > 0), None)
+            ratio = num_given / num_received
+            if ratio == 3:
+                times_used = num_given // 3
+                port_dict['3:1'] += times_used
+            elif ratio == 2:
+                times_used = num_given // 2
+                port_dict[resource_given] += times_used
+        #otherwise, need more logic to determine which ports were used
+        else:
+            complex_trade = port_solver(given, num_received)
+            #if complex trade is null
+            if not complex_trade:
+                #trade not solveable with available data, skip
+                continue
+            for resource, count in complex_trade.items():
+                port_dict[resource] += count
+
+    return port_dict
