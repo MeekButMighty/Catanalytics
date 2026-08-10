@@ -362,6 +362,25 @@ with col2:
         </div>
     """, unsafe_allow_html=True)
 
+st.markdown("<br>", unsafe_allow_html=True)
+
+st.markdown("""
+        <div style='font-size:28px; font-weight:600;
+        font-family: Bahnschrift, Segoe UI;'>
+        The Race to 10 VPs: how the lead changes at key milestones
+        </div>
+    """, unsafe_allow_html=True)
+st.markdown("""
+        <div style='font-size:20px; font-weight:600;
+        font-family: Bahnschrift, Segoe UI;'>
+        Each node shows a player's position in reaching a victory point thresholds: 
+        <span style='color:#d4af37;'>first,</span>
+        <span style='color:#B0B7C0;'>second,</span>
+        <span style='color:#B87333;'>third,</span>  
+        <span style='color:#3c78d8;'>fourth,</span>
+        <span style='color:#414141;'>or not reached</span>
+        </div>
+    """, unsafe_allow_html=True)
 sankey_chart = sankey(checkpt)
 st.plotly_chart(sankey_chart, width='stretch')
 

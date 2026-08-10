@@ -736,6 +736,15 @@ def sankey(checkpt_df):
     transitions = pd.DataFrame(transitions)
     links = transitions.groupby(["source", "target"]).size().reset_index(name="count")
 
+    # Total players leaving each source node
+    source_totals = links.groupby("source")["count"].sum()
+
+    # Percentage of players following each transition
+    links["pct_of_source"] = (
+        links["count"] /
+        links["source"].map(source_totals)
+    )
+
     #fix order
     labels = (
         [f"3VP-{i}" for i in [1,2,3,4]] +
@@ -751,6 +760,8 @@ def sankey(checkpt_df):
     links["source_id"] = links["source"].map(label_to_id)
     links["target_id"] = links["target"].map(label_to_id)
 
+    source_totals = links.groupby("source")["count"].sum()
+
     stage_x = {
         "3": 0.00,
         "5": 0.25,
@@ -758,6 +769,28 @@ def sankey(checkpt_df):
         "9": 0.75,
         "Final": 1.00,
     }
+
+    stage_titles = {
+        "3": "  --    3 VP",
+        "5": "5 VP",
+        "7": "7 VP",
+        "9": "9 VP",
+        "Final": "Final Rank"
+    }
+
+    annotations = [
+        dict(
+            x=x,
+            y=1.08,
+            xref="paper",
+            yref="paper",
+            text=f"<b>{stage_titles[stage]}</b>",
+            showarrow=False,
+            xanchor="center",
+            font=dict(size=14)
+        )
+        for stage, x in stage_x.items()
+    ]
 
     node_x = {
         f"{stage}VP-{rank}": x
@@ -770,11 +803,11 @@ def sankey(checkpt_df):
     }
 
     node_y = {
-        "3VP-1": 0.05, "3VP-2": 0.20, "3VP-3": 0.35, "3VP-4": 0.50,
-        "5VP-1": 0.05, "5VP-2": 0.25, "5VP-3": 0.45, "5VP-NR": 0.95,
-        "7VP-1": 0.05, "7VP-2": 0.25, "7VP-3": 0.45, "7VP-NR": 0.70,
-        "9VP-1": 0.05, "9VP-2": 0.25, "9VP-3": 0.45, "9VP-NR": 0.60,
-        "FinalVP-1": 0.05, "FinalVP-2": 0.25, "FinalVP-3": 0.50, "FinalVP-4": 0.75,
+        "3VP-1": -0.05, "3VP-2": 0.20, "3VP-3": 0.35, "3VP-4": 0.50,
+        "5VP-1": 0.05, "5VP-2": 0.3, "5VP-3": 0.65, "5VP-NR": 0.95,
+        "7VP-1": 0.05, "7VP-2": 0.35, "7VP-3": 0.6, "7VP-NR": 0.9,
+        "9VP-1": 0.05, "9VP-2": 0.25, "9VP-3": 0.4, "9VP-NR": 0.75,
+        "FinalVP-1": 0.05, "FinalVP-2": 0.30, "FinalVP-3": 0.55, "FinalVP-4": 0.8,
     }
 
     x = [node_x[label] for label in labels]
@@ -798,25 +831,34 @@ def sankey(checkpt_df):
         go.Sankey(
             arrangement="snap",
             node=dict(
-                label=labels,
+                label=[""] * len(labels),
                 x=x,
                 y=y,
                 pad=20,
                 thickness=20,
-                color=node_colors
+                color=node_colors,
+                customdata=labels,
+                hovertemplate="%{customdata}<extra></extra>"
             ),
             link=dict(
                 source=links["source_id"],
                 target=links["target_id"],
-                value=links["count"]
+                value=links["count"],
+                customdata=links["pct_of_source"],
+                hovertemplate=(
+                    "%{source.customdata} → %{target.customdata}"
+                    "<br>%{value} players"
+                    "<br>%{customdata:.1%} of players from %{source.customdata}"
+                    "<extra></extra>"
+                )
             )
         )
     )
 
     fig.update_layout(
-        title="Catan VP Progression",
-        height=400,
-        width=800,
+        height=350,
+        annotations=annotations,
+        margin=dict(l=0, r=0, t=30, b=20)
     )
 
     return fig    
