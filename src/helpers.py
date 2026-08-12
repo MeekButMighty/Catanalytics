@@ -1,5 +1,7 @@
 import pandas as pd
 import streamlit as st
+import base64
+from pathlib import Path
 
 def game_cropper(game_log):
     game = game_log.copy()
@@ -340,3 +342,14 @@ def count_port_usage(events, player):
                 port_dict[resource] += count
 
     return port_dict
+
+def load_svg(path, color):
+    svg = Path(path).read_text()
+    svg = svg.replace("#000000", color)
+    if path == "assets/grain.svg":
+        svg = svg.replace("<path ", f'<path fill="{color}" ')
+
+    return (
+        "data:image/svg+xml;base64,"
+        + base64.b64encode(svg.encode()).decode()
+    )

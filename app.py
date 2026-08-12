@@ -1,4 +1,5 @@
 import pandas as pd
+import math
 import sqlite3
 from src.io import load_all_games
 from src.transforms import (
@@ -17,7 +18,8 @@ from src.plots import (
     plot_robbed,
     plot_resource,
     final_scores,
-    sankey
+    sankey,
+    recent_radars
 )
 from src.helpers import render_hex, kpi, time_dict, make_firsts_df
 
@@ -32,10 +34,10 @@ if "watcher_started" not in st.session_state:
 
 
 # refresh data every 60 seconds to pick up new games
-st_autorefresh(
-    interval=60 * 1000,
-    key="datarefresh"
-)  
+#st_autorefresh(
+#    interval=60 * 1000,
+#    key="datarefresh"
+#)  
 
 # -------------------------
 # CONFIG
@@ -50,6 +52,14 @@ color_dict = {
     2: '#B0B7C0',
     3: '#B87333',
     4: '#3c78d8'
+}
+
+resource_colors = {
+    'Brick': '#B87333',
+    'Grain': '#D4AF37',
+    'Ore': '#B0B7C0',
+    'Lumber': '#38761d',
+    'Wool': '#88b773'
 }
 
 # -------------------------
@@ -205,10 +215,72 @@ selected_timestamp = timestamp_options[selected_label]
 # -------------------------
 # PLOTS
 # -------------------------
+
+
 st.plotly_chart(
     plot_one_game(turns, master, selected_timestamp),
     width='stretch'
 )
+
+st.markdown("""
+        <div style='font-size:28px; font-weight:600;
+        font-family: Bahnschrift, Segoe UI;'>
+        Recent Games: Resource Profiles
+        </div>
+    """, unsafe_allow_html=True)
+st.markdown(f"""
+<div style='font-size:20px; font-weight:600;
+font-family: Bahnschrift, Segoe UI;'>
+Raw income from dice rolls of
+<span style='color:{resource_colors["Ore"]};'>ore,</span>
+<span style='color:{resource_colors["Grain"]};'>grain,</span>
+<span style='color:{resource_colors["Brick"]};'>brick,</span>
+<span style='color:{resource_colors["Wool"]};'>wool,</span>
+and
+<span style='color:{resource_colors["Lumber"]};'>lumber.</span>
+</div>
+""", unsafe_allow_html=True)
+
+if "page_num" not in st.session_state:
+    st.session_state.page_num = 0
+
+def next_page():
+    st.session_state.page_num += 1
+
+def previous_page():
+    st.session_state.page_num -= 1
+
+max_page = math.ceil(values[0] / 5) - 1
+
+back, chart, forward = st.columns(
+    [1, 20, 1],
+    vertical_alignment="center"
+)
+
+with back:
+    st.button(
+        "←",
+        disabled=st.session_state.page_num == 0,
+        on_click=previous_page
+    )
+
+with chart:
+    st.plotly_chart(
+        recent_radars(
+            master,
+            "MadmanMeek",
+            st.session_state.page_num
+        ),
+        width="stretch"
+    )
+
+with forward:
+    st.button(
+        "→",
+        disabled=st.session_state.page_num >= max_page,
+        on_click=next_page
+    )
+
 
 st.markdown("""
     <div style='font-size:28px; font-weight:600;

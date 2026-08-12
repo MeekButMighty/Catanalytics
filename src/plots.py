@@ -6,7 +6,7 @@ import plotly.express as px
 import pandas as pd
 from plotly.subplots import make_subplots
 from scipy.stats import gaussian_kde
-from src.helpers import p2_lead_pct
+from src.helpers import p2_lead_pct, load_svg
 
 color_dict = {
     1: '#D4AF37',  # Gold
@@ -862,3 +862,236 @@ def sankey(checkpt_df):
     )
 
     return fig    
+
+def recent_radars(master_df, player, page, n=5):
+    start = page*n
+    end = (page+1)*n
+    recents = (
+        master_df[master_df['player'] == player]
+        .sort_values('game_id', ascending=False)
+        .iloc[start:end]
+    )
+
+    resource_cols = ['Brick', 'Grain', 'Ore', 'Lumber', 'Wool']
+    resource_colors['3:1'] = "#FFFFFF"
+
+    subplot_titles = [
+        (
+            dt.strftime("%B ")
+            + str(dt.day)
+            + dt.strftime("<br>%I:%M %p").lstrip("0")
+        )
+        for gid in recents["game_id"]
+        if (dt := pd.to_datetime(
+            gid.replace("colonist_game_", ""),
+            format="%Y-%m-%d_%H-%M-%S"
+        )) is not None
+    ]
+
+    fig = make_subplots(
+        rows=1,
+        cols=n,
+        specs=[[{"type": "polar"}] * 5],
+        subplot_titles=subplot_titles
+    )
+
+    port_info = {
+        "Brick": ("port_brick", "assets/brick.svg"),
+        "Grain": ("port_grain", "assets/grain.svg"),
+        "Ore": ("port_ore", "assets/ore.svg"),
+        "Lumber": ("port_lumber", "assets/wood.svg"),
+        "Wool": ("port_wool", "assets/wool.svg"),
+        "3:1": ("port_3to1", "assets/boat.svg"),
+    }
+
+    for i, (_, row) in enumerate(recents.iterrows(), start=1):
+
+        # ----------------
+        # RADAR
+        # ----------------
+
+        values = row[resource_cols].tolist()
+        values.append(values[0])
+
+        fig.add_trace(
+            go.Scatterpolar(
+                r=values,
+                theta=resource_cols + [resource_cols[0]],
+                mode="lines+markers",
+                line=dict(color="black"),
+                marker=dict(
+                    size=12,
+                    color=[
+                        resource_colors[r]
+                        for r in resource_cols
+                    ] + [resource_colors[resource_cols[0]]]
+                ),
+                fill="toself",
+                fillcolor="rgba(255, 255, 255, 0.1)",
+                showlegend=False
+            ),
+            row=1,
+            col=i,
+        )
+        polar_name = "polar" if i == 1 else f"polar{i}"
+        fig.layout[polar_name].angularaxis.linecolor = color_dict[row["rank"]]
+
+        #resource totals
+        polar = fig.layout["polar" if i == 1 else f"polar{i}"]
+        x0, x1 = polar.domain.x
+        x_annot = x0 + (0.9*(x1-x0))
+        total = sum(values)
+
+        fig.add_annotation(
+            x=x_annot,
+            y=0.7,
+            xref="paper",
+            yref="paper",
+            text=f"{total}",
+            showarrow=False,
+            font=dict(
+                size=16,
+                color="white",
+                family="Bahnschrift"
+            ),
+            xanchor="center",
+            yanchor="middle"
+        )
+
+        # ----------------
+        # PORT ICONS
+        # ----------------
+        icons = []
+
+        for port, (column, path) in port_info.items():
+            count = int(row[column])
+
+            if count > 0:
+                icons.append((port, path, count))
+
+        # Position of center of this radar
+        polar = fig.layout["polar" if i == 1 else f"polar{i}"]
+        x0, x1 = polar.domain.x
+        x_center = (x0 + x1) / 2
+
+        # Maximum icons per row
+        icons_per_row = 5
+        dx = 0.06
+        dy = 0.06
+
+        for j, (port, path, count) in enumerate(icons):
+
+            icon_row = j // icons_per_row
+            icon_col = j % icons_per_row
+
+            num_on_row = min(
+                icons_per_row,
+                len(icons) - icon_row * icons_per_row
+            )
+
+            start_x = x_center - (num_on_row - 1) * dx / 2
+
+            x = start_x + icon_col * dx
+            y = 0.15 - icon_row * dy
+
+            # icon
+            fig.add_layout_image(
+                dict(
+                    source=load_svg(path, resource_colors[port]),
+                    x=x,
+                    y=y,
+                    xref="paper",
+                    yref="paper",
+                    sizex=0.07,
+                    sizey=0.07,
+                    xanchor="center",
+                    yanchor="middle",
+                    layer="above",
+                )
+            )
+
+            # multiplier
+            if count > 1:
+                fig.add_annotation(
+                    x=x + 0.013,
+                    y=y,
+                    xref="paper",
+                    yref="paper",
+                    text=f"×{count}",
+                    showarrow=False,
+                    font=dict(
+                        size=18,
+                        color="white",
+                        family="Bahnschrift"
+                    ),
+                    xanchor="left",
+                    yanchor="middle",
+                )
+
+    # ----------------
+    # RADAR FORMATTING
+    # ----------------
+
+    fig.update_polars(
+        bgcolor = 'rgba(49,51,63,100)',
+        angularaxis=dict(
+            showticklabels=False,
+            ticks=""#,
+            #linecolor="#666666"
+        ),
+        radialaxis=dict(
+            showticklabels=False,
+            ticks="",
+            showline=False
+        )
+    )
+
+    fig.update_layout(
+        height=400,
+        margin=dict(
+            t=5,
+            l=50,
+            r=0,
+            b=20
+        )
+    )
+
+    fig.add_annotation(
+            x=-0.05, y=1,
+            text="Date   <br>Played",
+            showarrow=False,
+            font=dict(size=17, color="grey", family="Bahnschrift, Segoe UI, Arial"),
+            xref="paper",
+            yref="paper",
+            xanchor="left",
+            yanchor="bottom"
+        )
+    fig.add_annotation(
+                    x=-0.05, y=0.67,
+                    text="Total",
+                    showarrow=False,
+                    font=dict(size=16, color="grey", family="Bahnschrift, Segoe UI, Arial"),
+                    xref="paper",
+                    yref="paper",
+                    xanchor="left",
+                    yanchor="bottom"
+                )
+    fig.add_annotation(
+                x=-0.05, y=0.3,
+                text="Ports<br>Used ",
+                showarrow=False,
+                font=dict(size=17, color="grey", family="Bahnschrift, Segoe UI, Arial"),
+                xref="paper",
+                yref="paper",
+                xanchor="left",
+                yanchor="bottom"
+            )
+
+    #bring titles down
+    for ann in fig.layout.annotations:
+        if "<br>" in ann.text:   # your subplot titles all contain <br>
+            ann.y -= 0.2
+            ann.font.size = 15
+
+    return fig
+
