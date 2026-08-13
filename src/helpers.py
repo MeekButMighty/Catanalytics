@@ -2,6 +2,7 @@ import pandas as pd
 import streamlit as st
 import base64
 from pathlib import Path
+from itertools import product
 
 def game_cropper(game_log):
     game = game_log.copy()
@@ -285,7 +286,7 @@ def port_solver(inputs, output):
         for i, (resource, count) in enumerate(nonzero_items):
             if valid_combo[i] == 3:
                 port_dict['3:1'] += count // valid_combo[i]
-            else:
+            elif valid_combo[i] == 2:
                 port_dict[resource] = count // valid_combo[i]
         return port_dict
 
