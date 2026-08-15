@@ -1,0 +1,92 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body {
+    width: 280px;
+    margin: 0;
+    padding: 14px;
+    background: #14161a;
+    color: #eee;
+    font-family: 'Segoe UI', sans-serif;
+  }
+  h1 {
+    font-size: 15px;
+    margin: 0 0 10px;
+    color: #d4af37;
+  }
+  button {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #d4af37;
+    border-radius: 6px;
+    background: #23272f;
+    color: #d4af37;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+  button:hover:not(:disabled) {
+    background: #2c313b;
+  }
+  #status {
+    margin-top: 10px;
+    font-size: 12px;
+    min-height: 32px;
+    word-wrap: break-word;
+  }
+  #status.error { color: #e06c6c; }
+  #status.success { color: #7fd68a; }
+  #status.info { color: #aaa; }
+
+  details {
+    margin-top: 12px;
+    font-size: 11px;
+    color: #999;
+  }
+  summary {
+    cursor: pointer;
+  }
+  input[type=text] {
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 6px;
+    padding: 5px;
+    background: #23272f;
+    border: 1px solid #444;
+    border-radius: 4px;
+    color: #eee;
+    font-size: 11px;
+  }
+  #saveUrl {
+    margin-top: 6px;
+    padding: 4px;
+    font-size: 11px;
+  }
+  label {
+    display: block;
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+  <h1>Catanalytics</h1>
+  <button id="captureBtn">Capture &amp; Upload Game</button>
+  <div id="status"></div>
+
+  <details>
+    <summary>API settings</summary>
+    <label for="apiUrl">API URL</label>
+    <input type="text" id="apiUrl">
+    <label for="apiKey">API key</label>
+    <input type="text" id="apiKey">
+    <button id="saveUrl">Save</button>
+  </details>
+
+  <script src="popup.js"></script>
+</body>
+</html>
