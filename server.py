@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 import pandas as pd
 from flask import Flask, request, jsonify
 
-from src.transforms import make_master_df, make_turns_df
+from src.transforms import make_master_df, make_turns_df, make_checkpt_df
 
 DB_PATH = os.environ.get("CATAN_DB_PATH", "catan.db")
 API_KEY = os.environ.get("CATAN_API_KEY")
@@ -55,19 +55,17 @@ def ingest_game_data(game_id, game_data, conn):
     if existing:
         return False
 
-    conn.execute(
-        "INSERT INTO games (game_id, raw_json) VALUES (?, ?)",
-        (game_id, json.dumps(game_data))
-    )
-
     df = pd.json_normalize(game_data)
     df["game_id"] = game_id
 
     master = make_master_df(df)
     turns = make_turns_df(df)
+    checkpt = make_checkpt_df(turns, [3, 5, 7, 9])
 
     master.to_sql('master', conn, if_exists='append', index=False)
     turns.to_sql('turns', conn, if_exists='append', index=False)
+    checkpt.to_sql('checkpoints', conn, if_exists='append', index=False)
+
 
     conn.commit()
     return True
