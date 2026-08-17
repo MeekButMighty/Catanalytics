@@ -9,6 +9,6 @@
   "permissions": ["activeTab", "scripting", "storage"],
   "host_permissions": [
     "https://colonist.io/*",
-    "https://api.catanalytics.meekconsulting.com/*"
+    "https://api-catanalytics.meekconsulting.com/*"
   ]
 }

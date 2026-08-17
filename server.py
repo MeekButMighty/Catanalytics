@@ -49,12 +49,21 @@ def ingest_game_data(game_id, game_data, conn):
 
     Returns False without writing anything if game_id was already ingested.
     """
+
     existing = conn.execute(
         "SELECT 1 FROM games WHERE game_id = ?", (game_id,)
     ).fetchone()
     if existing:
         return False
 
+    conn.execute(
+        """
+        INSERT INTO games (game_id, raw_json)
+        VALUES (?, ?)
+        """,
+        (game_id, json.dumps(game_data))
+    )
+    
     df = pd.json_normalize(game_data)
     df["game_id"] = game_id
 
