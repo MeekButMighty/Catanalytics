@@ -1,14 +1,13 @@
 services:
   catanalytics-api:
-    image: python:3.12-slim
+    build: .
     container_name: catanalytics-api
     restart: unless-stopped
     working_dir: /app
-    command: sh -c "pip install --no-cache-dir -r requirements.txt && gunicorn -w 1 -b 0.0.0.0:8000 server:app"
+    command: gunicorn -w 1 -b 0.0.0.0:8000 --access-logfile - --error-logfile - --access-logformat '%(t)s %(h)s "%(r)s" %(s)s %(b)s' server:app
     volumes:
       - ./:/app:ro
       - ./data:/data
-      - pip-cache:/root/.cache/pip
     environment:
       CATAN_DB_PATH: /data/catan.db
       CATAN_API_KEY: ${CATAN_API_KEY}
@@ -27,16 +26,15 @@ services:
       - traefik.http.services.catanalytics-api.loadbalancer.server.port=8000
 
   catanalytics-dashboard:
-    image: python:3.12-slim
+    build: .
     container_name: catanalytics-dashboard
     restart: unless-stopped
     working_dir: /app
-    command: sh -c "pip install --no-cache-dir -r requirements.txt && streamlit run app.py --server.address=0.0.0.0 --server.port=8501 --server.headless=true"
+    command: streamlit run app.py --server.address=0.0.0.0 --server.port=8501 --server.headless=true
     volumes:
       - ./:/app
       - ./data:/app/data
       - ./data/catan.db:/app/catan.db
-      - pip-cache:/root/.cache/pip
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://localhost:8501/_stcore/health')"]
       interval: 30s
@@ -54,6 +52,3 @@ services:
 networks:
   web:
     external: true
-
-volumes:
-  pip-cache:

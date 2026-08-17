@@ -143,8 +143,9 @@ def render_hex(label, value):
 def kpi(master_df, turns_df):
     num_games = int(len(master_df)/4)
     meek_df = master_df[master_df['player'] == 'MadmanMeek'].copy()
+    num_rel_games = int(len(meek_df))
     win_count= len(meek_df[meek_df['rank'] == 1])
-    win_rate= (win_count/num_games)*100
+    win_rate= (win_count/num_rel_games)*100
     win_rate= f"{win_rate: .1f}%"
     avg_vps = meek_df['vp_total'].mean()
     avg_vps = f"{avg_vps: .2f}"

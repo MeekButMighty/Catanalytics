@@ -82,18 +82,25 @@ def ingest_game_data(game_id, game_data, conn):
 
 @app.post("/games")
 def post_game():
+    app.logger.info("POST /games from %s (content-length=%s)",
+                     request.remote_addr, request.content_length)
+
     if API_KEY and request.headers.get("X-API-Key") != API_KEY:
+        app.logger.warning("Rejected /games from %s: bad or missing X-API-Key", request.remote_addr)
         return jsonify(error="unauthorized"), 401
 
     game_data = request.get_json(silent=True)
     if not isinstance(game_data, dict):
+        app.logger.warning("Rejected /games from %s: body is not a JSON object", request.remote_addr)
         return jsonify(error="request body must be a JSON object"), 400
 
     events = game_data.get("events")
     player_summary = game_data.get("playerSummary")
     if not isinstance(events, list) or not events:
+        app.logger.warning("Rejected /games from %s: 'events' missing/empty", request.remote_addr)
         return jsonify(error="'events' must be a non-empty list"), 400
     if not isinstance(player_summary, list) or not player_summary:
+        app.logger.warning("Rejected /games from %s: 'playerSummary' missing/empty", request.remote_addr)
         return jsonify(error="'playerSummary' must be a non-empty list"), 400
 
     game_id = make_game_id(game_data)
@@ -109,8 +116,10 @@ def post_game():
         conn.close()
 
     if not inserted:
+        app.logger.info("Duplicate game %s from %s", game_id, request.remote_addr)
         return jsonify(game_id=game_id, status="duplicate"), 200
 
+    app.logger.info("Ingested game %s from %s", game_id, request.remote_addr)
     return jsonify(game_id=game_id, status="ok"), 201
 
 
