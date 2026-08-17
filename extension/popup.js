@@ -1,4 +1,4 @@
-const DEFAULT_API_URL = 'https://api.catanalytics.meekconsulting.com/games';
+const DEFAULT_API_URL = 'https://api-catanalytics.meekconsulting.com/games';
 
 // ============================================================================
 // Injected into the Colonist.io tab. Must be fully self-contained: no
