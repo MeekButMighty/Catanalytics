@@ -887,11 +887,12 @@ def recent_radars(master_df, player, page, n=5):
             format="%Y-%m-%d_%H-%M-%S"
         )) is not None
     ]
+    subplot_titles += [""] * (n - len(subplot_titles))
 
     fig = make_subplots(
         rows=1,
         cols=n,
-        specs=[[{"type": "polar"}] * 5],
+        specs=[[{"type": "polar"}] * n],
         subplot_titles=subplot_titles
     )
 

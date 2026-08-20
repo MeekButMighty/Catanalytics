@@ -23,7 +23,7 @@ from src.plots import (
     plot_awards,
     monopoly_analysis
 )
-from src.helpers import render_hex, kpi, time_dict, make_firsts_df
+from src.helpers import render_hex, kpi, time_dict, make_firsts_df, time_dict_filtered
 
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
@@ -48,6 +48,8 @@ st.set_page_config(
     page_title="Catanalytics",
     layout="wide"
 )
+
+tab1, tab2 = st.tabs(["Overall Analysis", "Player Analysis"])
 
 color_dict = {
     1: '#D4AF37',
@@ -124,9 +126,9 @@ def load_data():
     return master, turns, checkpt
 
 
-@st.cache_data(ttl=60)
-def get_timestamp_options(turns):
-    return time_dict(turns)
+#@st.cache_data(ttl=60)
+#def get_timestamp_options(turns):
+#    return time_dict(turns)
 
 
 @st.cache_data(ttl=60)
@@ -143,348 +145,350 @@ master, turns, checkpt = load_data()
 # -------------------------
 # HEADER
 # -------------------------
-col1, col2 = st.columns([3, 3], vertical_alignment="center")
 
-with col1:
-    st.title("CATANALYTICS")
-    st.subheader("A personal data project by Oliver Meek")
-    st.markdown(
-        "Data displayed on this dashboard was scraped from "
-        "[colonist.io](https://colonist.io). "
-        "To view the code involved in production, access the github repo [here](https://github.com/MeekButMighty/Catanalytics)."
-    )
+with tab1:
+    col1, col2 = st.columns([3, 3], vertical_alignment="center")
 
-with col2:
-    st.image("dash_logo.png")
+    with col1:
+        st.title("CATANALYTICS")
+        st.subheader("A personal data project by Oliver Meek")
+        st.markdown(
+            "Data displayed on this dashboard was scraped from "
+            "[colonist.io](https://colonist.io). "
+            "To view the code involved in production, access the github repo [here](https://github.com/MeekButMighty/Catanalytics)."
+        )
 
-
-# -------------------------
-# KPI ROW (cached)
-# -------------------------
-values = get_kpis(master, turns)
-num_games = values[0]
-
-k1, k2, k3, k4, k5 = st.columns(5)
-
-with k1:
-    render_hex("Games Analyzed", values[0])
-
-with k2:
-    render_hex("Turns analyzed", values[1])
-
-with k3:
-    render_hex("Players in System", values[2])
-
-with k4:
-    render_hex("MadmanMeek win rate", values[3])
-
-with k5:
-    render_hex("MadmanMeek average VPs", values[4])
+    with col2:
+        st.image("dash_logo.png")
 
 
-# -------------------------
-# TIMESTAMP OPTIONS (cached)
-# -------------------------
-timestamp_options = get_timestamp_options(turns)
+    # -------------------------
+    # KPI ROW (cached)
+    # -------------------------
+    values = get_kpis(master, turns)
+    num_games = values[0]
+
+    k1, k2, k3, k4, k5 = st.columns(5)
+
+    with k1:
+        render_hex("Games Analyzed", values[0])
+
+    with k2:
+        render_hex("Turns analyzed", values[1])
+
+    with k3:
+        render_hex("Players in System", values[2])
+
+    with k4:
+        render_hex("MadmanMeek win rate", values[3])
+
+    with k5:
+        render_hex("MadmanMeek average VPs", values[4])
 
 
-# -------------------------
-# SELECT + TITLE ROW
-# -------------------------
-col1, col2 = st.columns([10, 14], gap="small")
+    # -------------------------
+    # Plots
+    # -------------------------
 
-with col1:
-    st.markdown("<div style='height:44px'></div>", unsafe_allow_html=True)
     st.markdown("""
         <div style='font-size:28px; font-weight:600;
         font-family: Bahnschrift, Segoe UI;'>
-        VP Progression for game played on:
+        <span style='color:#d4af37;'>Winners</span>
+        city up and take longest road
         </div>
     """, unsafe_allow_html=True)
-
-with col2:
-    st.markdown("<div style='height:44px'></div>", unsafe_allow_html=True)
-
-    selected_label = st.selectbox(
-        "Select game",
-        options=list(timestamp_options.keys()),
-        label_visibility="collapsed"
-    )
-
-selected_timestamp = timestamp_options[selected_label]
-
-
-# -------------------------
-# PLOTS
-# -------------------------
-
-
-st.plotly_chart(
-    plot_one_game(turns, master, selected_timestamp),
-    width='stretch'
-)
-
-st.markdown("""
-        <div style='font-size:28px; font-weight:600;
+    st.markdown("""
+        <div style='font-size:20px; font-weight:600;
         font-family: Bahnschrift, Segoe UI;'>
-        Recent Games: Resource Profiles
+        Average VPs gained from different sources in comparison to
+        <span style='color:#B0B7C0;'>runner up,</span>
+        <span style='color:#B87333;'>player in third,</span>  
+        and
+        <span style='color:#3c78d8;'>player in fourth,</span>     
         </div>
     """, unsafe_allow_html=True)
-st.markdown(f"""
-<div style='font-size:20px; font-weight:600;
-font-family: Bahnschrift, Segoe UI;'>
-Raw income from dice rolls of
-<span style='color:{resource_colors["Ore"]};'>ore,</span>
-<span style='color:{resource_colors["Grain"]};'>grain,</span>
-<span style='color:{resource_colors["Brick"]};'>brick,</span>
-<span style='color:{resource_colors["Wool"]};'>wool,</span>
-and
-<span style='color:{resource_colors["Lumber"]};'>lumber.</span>
-</div>
-""", unsafe_allow_html=True)
-
-if "page_num" not in st.session_state:
-    st.session_state.page_num = 0
-
-def next_page():
-    st.session_state.page_num += 1
-
-def previous_page():
-    st.session_state.page_num -= 1
-
-max_page = math.ceil(values[0] / 5) - 1
-
-back, chart, forward = st.columns(
-    [1, 20, 1],
-    vertical_alignment="center"
-)
-
-with back:
-    st.button(
-        "←",
-        disabled=st.session_state.page_num == 0,
-        on_click=previous_page
-    )
-
-with chart:
     st.plotly_chart(
-        recent_radars(
-            master,
-            "MadmanMeek",
-            st.session_state.page_num
-        ),
-        width="stretch"
+        plot_grouped_bar(master),
+        width='stretch'
+    )
+    st.markdown("""
+        <div style='font-size:20px; font-weight:600;
+        font-family: Bahnschrift, Segoe UI;'>
+        Percentage of winners who won with
+        <span style='color:#B87333;'>longest road,</span>  
+        <span style='color:#B0B7C0;'>largest army,</span>
+        <span style='color:#B4957A;'>both,</span>
+        or neither
+        </div>
+    """, unsafe_allow_html=True)
+    st.plotly_chart(
+        plot_awards(master),
+        width='stretch'
     )
 
-with forward:
-    st.button(
-        "→",
-        disabled=st.session_state.page_num >= max_page,
-        on_click=next_page
-    )
+    col1, col2 = st.columns([3, 2], gap="small")
+
+    with col1:
+        st.markdown("""
+            <div style='font-size:28px; font-weight:600;
+            font-family: Bahnschrift, Segoe UI;'>
+            Is the snake draft really fair?
+            </div>
+        """, unsafe_allow_html=True)
+        st.markdown(f"""
+            <div style='font-size:20px; font-weight:600;
+            font-family: Bahnschrift, Segoe UI;'>
+            How players in different placement orders fared across <b>{num_games}</b> games
+            </div>
+        """, unsafe_allow_html=True)  
+        st.plotly_chart(plot_stacked_bar(master), width='stretch')
+    with col2:
+        st.markdown("""
+            <div style='font-size:28px; font-weight:600;
+            font-family: Bahnschrift, Segoe UI;'>
+            How long do games last?
+            </div>
+        """, unsafe_allow_html=True)
+        st.markdown("""
+            <div style='font-size:20px; font-weight:600;
+            font-family: Bahnschrift, Segoe UI;'>
+            Distribution of game length in turns
+            </div>
+        """, unsafe_allow_html=True)
+        st.plotly_chart(plot_length_hist(turns))
+
+    col1, col2 = st.columns([3, 1], gap="small", vertical_alignment="bottom")
+
+    firsts_df = make_firsts_df(turns)
+    with col1:
+        st.markdown("""
+            <div style='font-size:28px; font-weight:600;
+            font-family: Bahnschrift, Segoe UI;'>
+            How early in the game are key milestones achieved?
+            </div>
+        """, unsafe_allow_html=True)
+        st.markdown("""
+            <div style='font-size:20px; font-weight:600;
+            font-family: Bahnschrift, Segoe UI;'>
+            Kernel density estimates of key actions for each player by rank
+            </div>
+        """, unsafe_allow_html=True)
+        st.plotly_chart(plot_firsts(firsts_df), width='stretch', config={"displayModeBar": False})
+
+    with col2:
+        st.plotly_chart(pi_series(firsts_df), width='stretch', config={"displayModeBar": False})
+
+    col1, col2 = st.columns([10, 2], gap="small")
+    with col1:
+        st.markdown("""
+                <div style='font-size:28px; font-weight:600;
+                font-family: Bahnschrift, Segoe UI;'>
+                Target on your back: can taking the lead too early set you up for failure?
+                </div>
+            """, unsafe_allow_html=True)
+        st.markdown("""
+                <div style='font-size:20px; font-weight:600;
+                font-family: Bahnschrift, Segoe UI;'>
+                Distribution of robber disparities between winning player and runner-up
+                </div>
+            """, unsafe_allow_html=True)
+
+    with col2:
+        st.markdown("""
+                <div style='font-size:15px; font-weight:600;
+                font-family: Bahnschrift, Segoe UI;'>
+                Filter by margin of victory:
+                </div>
+            """, unsafe_allow_html=True)
+        m1 = st.checkbox("1", value=True)
+        m2 = st.checkbox("2", value=True)
+        m3 = st.checkbox("3+", value=True)
+
+    master["margin_group"] = master["margin"].apply(
+        lambda x: "3+" if x >= 3 else str(x)
+    )   
+
+    margin_choice = []
+    if m1: margin_choice.append("1")
+    if m2: margin_choice.append("2")
+    if m3: margin_choice.append("3+")
+    st.plotly_chart(plot_robbed(master, turns, margin=margin_choice),  width='stretch', config={"displayModeBar": False})
+
+    col1, col2 = st.columns([2, 2], vertical_alignment="top")
+    with col1:
+        st.markdown("""
+            <div style='font-size:28px; font-weight:600;
+            font-family: Bahnschrift, Segoe UI;'>
+            No one resource is the key to victory
+            </div>
+        """, unsafe_allow_html=True)
+        st.markdown("""
+            <div style='font-size:15px; font-weight:600;
+            font-family: Bahnschrift, Segoe UI;'>
+            Distributions and medians of resources accrued by dice rolls for winning players
+            </div>
+        """, unsafe_allow_html=True)
+        st.plotly_chart(plot_resource(master), width='stretch', config={"displayModeBar": False})
 
 
-st.markdown("""
-    <div style='font-size:28px; font-weight:600;
-    font-family: Bahnschrift, Segoe UI;'>
-    <span style='color:#d4af37;'>Winners</span>
-    city up and take longest road
-    </div>
-""", unsafe_allow_html=True)
-st.markdown("""
-    <div style='font-size:20px; font-weight:600;
-    font-family: Bahnschrift, Segoe UI;'>
-    Average VPs gained from different sources in comparison to
-    <span style='color:#B0B7C0;'>runner up,</span>
-    <span style='color:#B87333;'>player in third,</span>  
-    and
-    <span style='color:#3c78d8;'>player in fourth,</span>     
-    </div>
-""", unsafe_allow_html=True)
-st.plotly_chart(
-    plot_grouped_bar(master),
-    width='stretch'
-)
-st.markdown("""
-    <div style='font-size:20px; font-weight:600;
-    font-family: Bahnschrift, Segoe UI;'>
-    Percentage of winners who won with
-    <span style='color:#B87333;'>longest road,</span>  
-    <span style='color:#B0B7C0;'>largest army,</span>
-    <span style='color:#B4957A;'>both,</span>
-    or neither
-    </div>
-""", unsafe_allow_html=True)
-st.plotly_chart(
-    plot_awards(master),
-    width='stretch'
-)
+    chart, vals = final_scores(master)
+    with col2:
+        st.markdown("""
+            <div style='font-size:28px; font-weight:600;
+            font-family: Bahnschrift, Segoe UI;'>
+            Close call or runaway win?
+            </div>
+        """, unsafe_allow_html=True)
+        st.markdown("""
+            <div style='font-size:15px; font-weight:600;
+            font-family: Bahnschrift, Segoe UI;'>
+            Games sorted by final score spread
+            </div>
+        """, unsafe_allow_html=True)
+        st.plotly_chart(chart, width='stretch', config={"displayModeBar": False})
+        st.markdown(f"""
+            <div style='font-size:15px;
+            font-family: Bahnschrift, Segoe UI;
+            margin-left:30px;'>
+            - In <b>{vals[0]: .1f}%</b> of games, the margin of victory was only 1 VP. <br>
+            - In <b>{vals[1]: .1f}%</b> of games, the margin of victory was 2 VPs. <br>
+            - In <b>{vals[2]: .1f}%</b> of games, the margin of victory was 3 or more VPs.
+            </div>
+        """, unsafe_allow_html=True)
 
-col1, col2 = st.columns([3, 2], gap="small")
+    st.markdown("<br>", unsafe_allow_html=True)
 
-with col1:
-    st.markdown("""
-        <div style='font-size:28px; font-weight:600;
-        font-family: Bahnschrift, Segoe UI;'>
-        Is the snake draft really fair?
-        </div>
-    """, unsafe_allow_html=True)
-    st.markdown(f"""
-        <div style='font-size:20px; font-weight:600;
-        font-family: Bahnschrift, Segoe UI;'>
-        How players in different placement orders fared across <b>{num_games}</b> games
-        </div>
-    """, unsafe_allow_html=True)  
-    st.plotly_chart(plot_stacked_bar(master), width='stretch')
-with col2:
-    st.markdown("""
-        <div style='font-size:28px; font-weight:600;
-        font-family: Bahnschrift, Segoe UI;'>
-        How long do games last?
-        </div>
-    """, unsafe_allow_html=True)
-    st.markdown("""
-        <div style='font-size:20px; font-weight:600;
-        font-family: Bahnschrift, Segoe UI;'>
-        Distribution of game length in turns
-        </div>
-    """, unsafe_allow_html=True)
-    st.plotly_chart(plot_length_hist(turns))
-
-col1, col2 = st.columns([3, 1], gap="small", vertical_alignment="bottom")
-
-firsts_df = make_firsts_df(turns)
-with col1:
-    st.markdown("""
-        <div style='font-size:28px; font-weight:600;
-        font-family: Bahnschrift, Segoe UI;'>
-        How early in the game are key milestones achieved?
-        </div>
-    """, unsafe_allow_html=True)
-    st.markdown("""
-        <div style='font-size:20px; font-weight:600;
-        font-family: Bahnschrift, Segoe UI;'>
-        Kernel density estimates of key actions for each player by rank
-        </div>
-    """, unsafe_allow_html=True)
-    st.plotly_chart(plot_firsts(firsts_df), width='stretch', config={"displayModeBar": False})
-
-with col2:
-    st.plotly_chart(pi_series(firsts_df), width='stretch', config={"displayModeBar": False})
-
-col1, col2 = st.columns([10, 2], gap="small")
-with col1:
     st.markdown("""
             <div style='font-size:28px; font-weight:600;
             font-family: Bahnschrift, Segoe UI;'>
-            Target on your back: can taking the lead too early set you up for failure?
+            The Power of Monopoly
             </div>
         """, unsafe_allow_html=True)
     st.markdown("""
             <div style='font-size:20px; font-weight:600;
             font-family: Bahnschrift, Segoe UI;'>
-            Distribution of robber disparities between winning player and runner-up
+            Final VP totals for players who received the majority of a specific resource 
             </div>
         """, unsafe_allow_html=True)
+    st.plotly_chart(monopoly_analysis(master), width='stretch')
 
-with col2:
     st.markdown("""
-            <div style='font-size:15px; font-weight:600;
+            <div style='font-size:28px; font-weight:600;
             font-family: Bahnschrift, Segoe UI;'>
-            Filter by margin of victory:
+            The Race to 10 VPs: how the lead changes at key milestones
             </div>
         """, unsafe_allow_html=True)
-    m1 = st.checkbox("1", value=True)
-    m2 = st.checkbox("2", value=True)
-    m3 = st.checkbox("3+", value=True)
-
-master["margin_group"] = master["margin"].apply(
-    lambda x: "3+" if x >= 3 else str(x)
-)   
-
-margin_choice = []
-if m1: margin_choice.append("1")
-if m2: margin_choice.append("2")
-if m3: margin_choice.append("3+")
-st.plotly_chart(plot_robbed(master, turns, margin=margin_choice),  width='stretch', config={"displayModeBar": False})
-
-col1, col2 = st.columns([2, 2], vertical_alignment="top")
-with col1:
     st.markdown("""
-        <div style='font-size:28px; font-weight:600;
-        font-family: Bahnschrift, Segoe UI;'>
-        No one resource is the key to victory
-        </div>
-    """, unsafe_allow_html=True)
-    st.markdown("""
-        <div style='font-size:15px; font-weight:600;
-        font-family: Bahnschrift, Segoe UI;'>
-        Distributions and medians of resources accrued by dice rolls for winning players
-        </div>
-    """, unsafe_allow_html=True)
-    st.plotly_chart(plot_resource(master), width='stretch', config={"displayModeBar": False})
+            <div style='font-size:20px; font-weight:600;
+            font-family: Bahnschrift, Segoe UI;'>
+            Each node shows a player's position in reaching a victory point thresholds: 
+            <span style='color:#d4af37;'>first,</span>
+            <span style='color:#B0B7C0;'>second,</span>
+            <span style='color:#B87333;'>third,</span>  
+            <span style='color:#3c78d8;'>fourth,</span>
+            <span style='color:#414141;'>or not reached</span>
+            </div>
+        """, unsafe_allow_html=True)
+    sankey_chart = sankey(checkpt)
+    st.plotly_chart(sankey_chart, width='stretch')
 
 
-chart, vals = final_scores(master)
-with col2:
-    st.markdown("""
-        <div style='font-size:28px; font-weight:600;
-        font-family: Bahnschrift, Segoe UI;'>
-        Close call or runaway win?
-        </div>
-    """, unsafe_allow_html=True)
-    st.markdown("""
-        <div style='font-size:15px; font-weight:600;
-        font-family: Bahnschrift, Segoe UI;'>
-        Games sorted by final score spread
-        </div>
-    """, unsafe_allow_html=True)
-    st.plotly_chart(chart, width='stretch', config={"displayModeBar": False})
-    st.markdown(f"""
-        <div style='font-size:15px;
-        font-family: Bahnschrift, Segoe UI;
-        margin-left:30px;'>
-        - In <b>{vals[0]: .1f}%</b> of games, the margin of victory was only 1 VP. <br>
-        - In <b>{vals[1]: .1f}%</b> of games, the margin of victory was 2 VPs. <br>
-        - In <b>{vals[2]: .1f}%</b> of games, the margin of victory was 3 or more VPs.
-        </div>
-    """, unsafe_allow_html=True)
+    #st.pyplot(plot_avg_prog(progress))
+with tab2:
+    player = st.text_input("Please enter your colonist.io username to view your recent games:")
 
-st.markdown("<br>", unsafe_allow_html=True)
-
-st.markdown("""
-        <div style='font-size:28px; font-weight:600;
-        font-family: Bahnschrift, Segoe UI;'>
-        The Power of Monopoly
-        </div>
-    """, unsafe_allow_html=True)
-st.markdown("""
-        <div style='font-size:20px; font-weight:600;
-        font-family: Bahnschrift, Segoe UI;'>
-        Final VP totals for players who received the majority of a specific resource 
-        </div>
-    """, unsafe_allow_html=True)
-st.plotly_chart(monopoly_analysis(master), width='stretch')
-
-st.markdown("""
-        <div style='font-size:28px; font-weight:600;
-        font-family: Bahnschrift, Segoe UI;'>
-        The Race to 10 VPs: how the lead changes at key milestones
-        </div>
-    """, unsafe_allow_html=True)
-st.markdown("""
-        <div style='font-size:20px; font-weight:600;
-        font-family: Bahnschrift, Segoe UI;'>
-        Each node shows a player's position in reaching a victory point thresholds: 
-        <span style='color:#d4af37;'>first,</span>
-        <span style='color:#B0B7C0;'>second,</span>
-        <span style='color:#B87333;'>third,</span>  
-        <span style='color:#3c78d8;'>fourth,</span>
-        <span style='color:#414141;'>or not reached</span>
-        </div>
-    """, unsafe_allow_html=True)
-sankey_chart = sankey(checkpt)
-st.plotly_chart(sankey_chart, width='stretch')
-
-
-#st.pyplot(plot_avg_prog(progress))
+    if player:
+        if player in master['player'].unique():
+            timestamp_options = time_dict_filtered(master, player)
+            col1, col2 = st.columns([10, 14], gap="small")
+            
+            with col1:
+                    st.markdown("<div style='height:44px'></div>", unsafe_allow_html=True)
+                    st.markdown("""
+                        <div style='font-size:28px; font-weight:600;
+                        font-family: Bahnschrift, Segoe UI;'>
+                        VP Progression for game played on:
+                        </div>
+                    """, unsafe_allow_html=True)
+            
+            with col2:
+                    st.markdown("<div style='height:44px'></div>", unsafe_allow_html=True)
+            
+                    selected_label = st.selectbox(
+                        "Select game",
+                        options=list(timestamp_options.keys()),
+                        label_visibility="collapsed"
+                    )
+            
+            selected_timestamp = timestamp_options[selected_label]
+            
+            st.plotly_chart(
+                    plot_one_game(turns, master, selected_timestamp),
+                    width='stretch'
+                )
+        
+            st.markdown("""
+                        <div style='font-size:28px; font-weight:600;
+                        font-family: Bahnschrift, Segoe UI;'>
+                        Recent Games: Resource Profiles
+                        </div>
+                    """, unsafe_allow_html=True)
+            st.markdown(f"""
+                <div style='font-size:20px; font-weight:600;
+                font-family: Bahnschrift, Segoe UI;'>
+                Raw income from dice rolls of
+                <span style='color:{resource_colors["Ore"]};'>ore,</span>
+                <span style='color:{resource_colors["Grain"]};'>grain,</span>
+                <span style='color:{resource_colors["Brick"]};'>brick,</span>
+                <span style='color:{resource_colors["Wool"]};'>wool,</span>
+                and
+                <span style='color:{resource_colors["Lumber"]};'>lumber.</span>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            if "page_num" not in st.session_state:
+                    st.session_state.page_num = 0
+            
+            def next_page():
+                    st.session_state.page_num += 1
+            
+            def previous_page():
+                    st.session_state.page_num -= 1
+            
+            max_page = math.ceil(values[0] / 5) - 1
+            
+            back, chart, forward = st.columns(
+                    [1, 20, 1],
+                    vertical_alignment="center"
+                )
+            
+            with back:
+                    st.button(
+                        "←",
+                        disabled=st.session_state.page_num == 0,
+                        on_click=previous_page
+                    )
+            
+            with chart:
+                    st.plotly_chart(
+                        recent_radars(
+                            master,
+                            player,
+                            st.session_state.page_num
+                        ),
+                        width="stretch"
+                    )
+            
+            with forward:
+                    st.button(
+                        "→",
+                        disabled=st.session_state.page_num >= max_page,
+                        on_click=next_page
+                    )
+        else:
+             st.markdown("""
+                                     <div style='font-size:14px; font-weight:600;
+                                     font-family: Bahnschrift, Segoe UI;'>
+                                     Player is not in database
+                                     </div>
+                                 """, unsafe_allow_html=True)

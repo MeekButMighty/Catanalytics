@@ -171,6 +171,22 @@ def time_dict(turns_df):
     }
     return timestamp_options
 
+def time_dict_filtered(master, player):
+    master_filtered = master[master['player']==player]
+    timestamps = (
+        master_filtered["game_id"]
+        .unique()
+    )
+    timestamps = pd.Series(timestamps).str.removeprefix("colonist_game_")
+    timestamp_options = {
+            pd.to_datetime(
+                ts,
+                format="%Y-%m-%d_%H-%M-%S"
+            ).strftime("%B %d, %Y at %I:%M %p"): ts
+            for ts in timestamps
+        }
+    return timestamp_options
+
 def p2_lead_pct(turns_df):
     vp_cols = ['p1_vps', 'p2_vps', 'p3_vps', 'p4_vps']
     p2_lead_dict = {}
