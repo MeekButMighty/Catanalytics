@@ -1095,3 +1095,119 @@ def recent_radars(master_df, player, page, n=5):
 
     return fig
 
+def plot_awards(master):
+    winners = master.loc[master["rank"] == 1]
+
+    lr = winners["longest_road"] == 2
+    la = winners["largest_army"] == 2
+
+    counts = {
+        "Longest Road": (lr & ~la).sum(),
+        "Both": (lr & la).sum(),
+        "Largest Army": (~lr & la).sum(),
+        "Neither": (~lr & ~la).sum(),
+    }
+
+    total = len(winners)
+
+    colors = {
+        "Longest Road": '#B87333',
+        "Both": "#B4957A",
+        "Largest Army": '#B0B7C0',
+        "Neither": "#fefefe",
+    }
+
+    fig = go.Figure()
+
+    for label, count in counts.items():
+        pct = 100 * count / total
+
+        fig.add_trace(
+            go.Bar(
+                y=["Winners"],
+                x=[pct],
+                name=label,
+                orientation="h",
+                marker_color=colors[label],
+                text=[f"{pct:.1f}%"],
+                textposition="inside",
+                insidetextanchor="middle",
+                textfont=dict(
+                    family="Bahnschrift",
+                    size=14,
+                ),
+                hovertemplate=f"{label}: {count} winners ({pct:.1f}%)<extra></extra>",
+                showlegend=False
+            )
+        )
+
+    fig.update_layout(
+        barmode="stack",
+        xaxis=dict(
+            range=[0, 100],
+            visible=False,
+        ),
+        yaxis=dict(
+            visible=False,
+        ),
+        height=70,
+        margin=dict(l=0, r=0, t=0, b=0),
+    )
+
+    return fig
+
+def monopoly_analysis(master):
+
+    resources = ["Brick", "Grain", "Ore", "Lumber", "Wool"]
+
+    rel_resources = []
+
+    for col in resources:
+        master[f"{col}_rel"] = (
+            master[col]
+            / master.groupby("game_id")[col].transform("sum")
+            * 100
+        )
+        rel_resources.append(f"{col}_rel")
+
+    monopoly_df = pd.DataFrame(
+        columns=["game_id", "player", "resource", "vp_total", "monop_pct"]
+    )
+
+    for _, row in master.iterrows():
+        for resource in rel_resources:
+            if row[resource] > 60:
+                monopoly_df.loc[len(monopoly_df)] = [
+                    row["game_id"],
+                    row["player"],
+                    resource[:-4],
+                    row["vp_total"],
+                    row[resource],
+                ]
+
+    fig = px.scatter(
+        monopoly_df,
+        x="monop_pct",
+        y="vp_total",
+        color="resource",
+        color_discrete_map=resource_colors,
+        hover_name="player",
+    )
+
+    fig.update_layout(
+            yaxis_title="",
+            xaxis_title="Percent Monopolized",
+            yaxis=dict(
+                automargin=False
+            ),
+            height=450,
+            showlegend=False,
+            margin=dict(
+                t=10,   # reduce top margin
+                l=20,
+                r=20,
+                b=20
+            )
+        )
+
+    return fig

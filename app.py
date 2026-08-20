@@ -19,7 +19,9 @@ from src.plots import (
     plot_resource,
     final_scores,
     sankey,
-    recent_radars
+    recent_radars,
+    plot_awards,
+    monopoly_analysis
 )
 from src.helpers import render_hex, kpi, time_dict, make_firsts_df
 
@@ -292,7 +294,7 @@ st.markdown("""
 st.markdown("""
     <div style='font-size:20px; font-weight:600;
     font-family: Bahnschrift, Segoe UI;'>
-    Average VPs gain from different sources in comparison to
+    Average VPs gained from different sources in comparison to
     <span style='color:#B0B7C0;'>runner up,</span>
     <span style='color:#B87333;'>player in third,</span>  
     and
@@ -301,6 +303,20 @@ st.markdown("""
 """, unsafe_allow_html=True)
 st.plotly_chart(
     plot_grouped_bar(master),
+    width='stretch'
+)
+st.markdown("""
+    <div style='font-size:20px; font-weight:600;
+    font-family: Bahnschrift, Segoe UI;'>
+    Percentage of winners who won with
+    <span style='color:#B87333;'>longest road,</span>  
+    <span style='color:#B0B7C0;'>largest army,</span>
+    <span style='color:#B4957A;'>both,</span>
+    or neither
+    </div>
+""", unsafe_allow_html=True)
+st.plotly_chart(
+    plot_awards(master),
     width='stretch'
 )
 
@@ -435,6 +451,20 @@ with col2:
     """, unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
+
+st.markdown("""
+        <div style='font-size:28px; font-weight:600;
+        font-family: Bahnschrift, Segoe UI;'>
+        The Power of Monopoly
+        </div>
+    """, unsafe_allow_html=True)
+st.markdown("""
+        <div style='font-size:20px; font-weight:600;
+        font-family: Bahnschrift, Segoe UI;'>
+        Final VP totals for players who received the majority of a specific resource 
+        </div>
+    """, unsafe_allow_html=True)
+st.plotly_chart(monopoly_analysis(master), width='stretch')
 
 st.markdown("""
         <div style='font-size:28px; font-weight:600;
