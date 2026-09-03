@@ -23,7 +23,7 @@ from src.plots import (
     plot_awards,
     monopoly_analysis
 )
-from src.helpers import render_hex, kpi, time_dict, make_firsts_df, time_dict_filtered
+from src.helpers import render_hex, kpi, time_dict, make_firsts_df, time_dict_filtered, personal_kpi
 
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
@@ -171,19 +171,19 @@ with tab1:
     k1, k2, k3, k4, k5 = st.columns(5)
 
     with k1:
-        render_hex("Games Analyzed", values[0])
+        render_hex("Games Processed", values[0])
 
     with k2:
-        render_hex("Turns analyzed", values[1])
+        render_hex("Turns Analyzed", values[1])
 
     with k3:
         render_hex("Players in System", values[2])
 
     with k4:
-        render_hex("MadmanMeek win rate", values[3])
+        render_hex("VPs Earned", values[3])
 
     with k5:
-        render_hex("MadmanMeek average VPs", values[4])
+        render_hex("Trades Tracked", values[4])
 
 
     # -------------------------
@@ -399,6 +399,36 @@ with tab2:
 
     if player:
         if player in master['player'].unique():
+
+            kpis = personal_kpi(master, player)
+            values = get_kpis(master, turns)
+            
+            k1, k2, k3, k4= st.columns([2,1,1,1], vertical_alignment="center")
+            with k1:
+                st.markdown("""
+                            <div style='font-size:28px; font-weight:600; color:#d4af37;
+                            font-family: Bahnschrift, Segoe UI;'>
+                            Performance insight for
+                            </div>
+                        """, unsafe_allow_html=True)
+                st.markdown(f"""
+                            <div style='font-size:60px; font-weight:600; 
+                            font-family: Bahnschrift, Segoe UI;'>
+                            {player}
+                            </div>
+                        """, unsafe_allow_html=True)
+            with k2:
+                render_hex("Games in System", kpis[0])
+            
+            with k3:
+                render_hex("Win Rate", kpis[1])
+
+            with k4:
+                render_hex("Average VPs", kpis[2])
+
+
+
+
             timestamp_options = time_dict_filtered(master, player)
             col1, col2 = st.columns([10, 14], gap="small")
             

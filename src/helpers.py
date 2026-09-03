@@ -104,11 +104,11 @@ def robber_counter(events, player):
             stolen += 1
     return stolen_from, stolen
 
-def render_hex(label, value):
+def render_hex(label, value, size=190):
     st.markdown(f"""
     <div style="
-        width: 190px;
-        height: 190px;
+        width: {size}px;
+        height: {size}px;
         background: linear-gradient(145deg, #23272f, #14161a);
         clip-path: polygon(
             25% 6%, 75% 6%,
@@ -142,16 +142,23 @@ def render_hex(label, value):
 
 def kpi(master_df, turns_df):
     num_games = int(len(master_df)/4)
-    meek_df = master_df[master_df['player'] == 'MadmanMeek'].copy()
-    num_rel_games = int(len(meek_df))
-    win_count= len(meek_df[meek_df['rank'] == 1])
-    win_rate= (win_count/num_rel_games)*100
-    win_rate= f"{win_rate: .1f}%"
-    avg_vps = meek_df['vp_total'].mean()
-    avg_vps = f"{avg_vps: .2f}"
     num_turns = len(turns_df)
     total_players = len(master_df['player'].unique())
-    return num_games, num_turns, total_players, win_rate, avg_vps
+    tot_vps = master_df['vp_total'].sum()
+    tot_trades = int(master_df['tot_trades'].sum() / 2)
+    return num_games, num_turns, total_players, tot_vps, tot_trades
+
+def personal_kpi(master_df, player_name):
+    games_played = len(master_df[master_df['player'] == player_name])
+    player_master = master_df[master_df['player'] == 'MadmanMeek'].copy()
+    games_played = len(player_master)
+    win_count = len(player_master[player_master['rank'] == 1])
+    win_rate = (win_count / games_played) * 100 if games_played > 0 else 0
+    win_rate = f"{win_rate:.1f}%"
+    avg_vps = player_master['vp_total'].mean() if games_played > 0 else 0
+    avg_vps = f"{avg_vps:.2f}"
+    return games_played, win_rate, avg_vps
+
 
 def time_dict(turns_df):
     timestamps = (
@@ -185,6 +192,8 @@ def time_dict_filtered(master, player):
             ).strftime("%B %d, %Y at %I:%M %p"): ts
             for ts in timestamps
         }
+    #reverse order
+    timestamp_options = dict(sorted(timestamp_options.items(), key=lambda x: pd.to_datetime(x[0]), reverse=True))
     return timestamp_options
 
 def p2_lead_pct(turns_df):
